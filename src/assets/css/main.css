@@ -1,0 +1,42 @@
+:root {
+  /* native: OS-like font rendering — antialiasing matches macOS text */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* reset: predictable sizing */
+* {
+  box-sizing: border-box;
+}
+
+/* reset: full-height root + base rem size */
+html {
+  height: 100%;
+  font-size: 16px;
+}
+
+body {
+  /* reset: clear UA margins and fill the window */
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  /* native: UI text isn't selectable like a web page */
+  user-select: none;
+  /* native: arrow cursor instead of the text I-beam when hovering text */
+  cursor: default;
+  /* native: no whole-window scroll — also suppresses macOS bounce/rubber-band */
+  overflow: hidden;
+}
+
+/* native: restore the pointer cursor on interactive elements (body sets default) */
+button {
+  cursor: pointer;
+}
+
+/* app-like links: no default web underline */
+a {
+  text-decoration: none;
+}

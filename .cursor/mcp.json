@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tauri-pilot": {
+      "command": "C:\\Users\\wenbe\\.cargo\\bin\\tauri-pilot.exe",
+      "args": ["mcp", "--window", "main"]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "home": {
+    "label": "Inicio"
+  },
+  "languages": {
+    "label": "Idiomas"
+  },
+  "settings": {
+    "label": "Configuraciones",
+    "description": "Administra las configuraciones y preferencias de la aplicación aquí.",
+    "theme": {
+      "label": "Tema",
+      "description": "Elige el tema para la aplicación.",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    }
+  }
+}

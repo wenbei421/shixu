@@ -1,0 +1,46 @@
+minimumReleaseAgeExclude:
+  - '@vitest/expect@4.1.7'
+  - '@vitest/mocker@4.1.7'
+  - '@vitest/pretty-format@4.1.7'
+  - '@vitest/runner@4.1.7'
+  - '@vitest/snapshot@4.1.7'
+  - '@vitest/spy@4.1.7'
+  - '@vitest/utils@4.1.7'
+  - vitest@4.1.7
+  - '@lucide/vue@1.22.0'
+  - '@tauri-apps/cli-darwin-arm64@2.11.4'
+  - '@tauri-apps/cli-darwin-x64@2.11.4'
+  - '@tauri-apps/cli-linux-arm-gnueabihf@2.11.4'
+  - '@tauri-apps/cli-linux-arm64-gnu@2.11.4'
+  - '@tauri-apps/cli-linux-arm64-musl@2.11.4'
+  - '@tauri-apps/cli-linux-riscv64-gnu@2.11.4'
+  - '@tauri-apps/cli-linux-x64-gnu@2.11.4'
+  - '@tauri-apps/cli-linux-x64-musl@2.11.4'
+  - '@tauri-apps/cli-win32-arm64-msvc@2.11.4'
+  - '@tauri-apps/cli-win32-ia32-msvc@2.11.4'
+  - '@tauri-apps/cli-win32-x64-msvc@2.11.4'
+  - '@tauri-apps/cli@2.11.4'
+  - '@vue/compiler-core@3.5.41'
+  - '@vue/compiler-dom@3.5.41'
+  - '@vue/compiler-sfc@3.5.41'
+  - '@vue/compiler-ssr@3.5.41'
+  - '@vue/reactivity@3.5.41'
+  - '@vue/runtime-core@3.5.41'
+  - '@vue/runtime-dom@3.5.41'
+  - '@vue/server-renderer@3.5.41'
+  - '@vue/shared@3.5.41'
+  - vue@3.5.41
+
+shellEmulator: true
+
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - chokidar@4.0.3
+  - semver@6.3.1
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - unrs-resolver
+  - vue-demi
+
+allowBuilds:
+  vue-demi: true
