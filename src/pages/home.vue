@@ -5,9 +5,12 @@ const { t } = useI18n({ useScope: 'global' })
 </script>
 
 <template>
-  <div>
-    <h1 class="text-4xl font-bold">
-      {{ t('home.label') }}
+  <div class="flex flex-col gap-2">
+    <h1 class="text-2xl font-bold tracking-tight">
+      {{ t('nav.home') }}
     </h1>
+    <p class="text-muted-foreground text-sm">
+      {{ t('pages.placeholder', { name: t('nav.home') }) }}
+    </p>
   </div>
 </template>

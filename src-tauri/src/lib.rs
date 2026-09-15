@@ -4,7 +4,11 @@ use plugins::logging;
 use tauri::Manager;
 use tauri_plugin_decorum::WebviewWindowExt;
 
+pub mod commands;
+mod error;
+mod id;
 pub mod plugins;
+mod sqlite;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -37,21 +41,31 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            commands::get_db_status,
+            commands::list_inspiration_categories,
+            commands::create_inspiration_category,
+            commands::update_inspiration_category,
+            commands::delete_inspiration_category,
+            commands::list_inspiration_tags,
+            commands::create_inspiration_tag,
+            commands::update_inspiration_tag,
+            commands::delete_inspiration_tag,
+            commands::list_inspirations,
+            commands::get_inspiration,
+            commands::create_inspiration,
+            commands::update_inspiration,
+            commands::delete_inspiration,
+        ])
         .setup(|app| {
-            // Create a custom titlebar for main window
-            // On Windows this hides decoration and creates custom window controls
-            // On macOS it needs hiddenTitle: true and titleBarStyle: overlay
+            sqlite::set_db(app).map_err(|e| e.to_string())?;
+
             let main_window = app.get_webview_window("main").unwrap();
             main_window.create_overlay_titlebar().unwrap();
 
-            // Some macOS-specific helpers
             #[cfg(target_os = "macos")]
             {
-                // Set a custom inset to the traffic lights
                 main_window.set_traffic_lights_inset(12.0, 16.0).unwrap();
-
-                // Make window transparent without privateApi
                 main_window.make_transparent().unwrap();
             }
 

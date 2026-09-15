@@ -1,6 +1,45 @@
 {
+  "brand": {
+    "name": "拾序 OS",
+    "english": "SHIXU OS"
+  },
+  "nav": {
+    "home": "Overview",
+    "inspiration": "Inspiration",
+    "timeline": "Timeline",
+    "insight": "Insight",
+    "report": "Daily Report",
+    "plan": "Plan",
+    "settings": "Settings"
+  },
+  "topbar": {
+    "searchPlaceholder": "Search fragments, tasks, projects, apps…",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "sidebar": {
+    "workspace": "Workspace",
+    "system": "System",
+    "local": "Local",
+    "todayFragments": "Today's fragments",
+    "localOnly": "On-device only"
+  },
+  "statusbar": {
+    "contextIdle": "Context Engine idle",
+    "active": "Active",
+    "focus": "Focus",
+    "fragments": "{count} fragments",
+    "sqliteReady": "SQLite ready",
+    "sqliteOffline": "SQLite offline",
+    "aiIdle": "AI Core offline"
+  },
+  "pages": {
+    "placeholder": "{name} shell is ready. Content will be wired next."
+  },
   "home": {
-    "label": "Home"
+    "label": "Overview"
   },
   "languages": {
     "label": "Languages"
@@ -15,5 +54,32 @@
       "dark": "Dark",
       "system": "System"
     }
+  },
+  "inspiration": {
+    "categories": "Categories",
+    "all": "All",
+    "addCategory": "Add category",
+    "newCategory": "New category name",
+    "deleteCategory": "Delete category",
+    "confirmDeleteCategory": "Items in this category will move to Uncategorized. Continue?",
+    "tags": "Tags",
+    "manageTags": "Manage tags",
+    "newTag": "Type a tag and press Enter",
+    "confirmDeleteTag": "Deleting a tag only unlinks it. Continue?",
+    "searchPlaceholder": "Search title or body…",
+    "create": "New inspiration",
+    "edit": "Edit inspiration",
+    "detail": "Inspiration detail",
+    "back": "Back to list",
+    "title": "Title",
+    "titlePlaceholder": "Optional; defaults to first line",
+    "category": "Category",
+    "content": "Content",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirmDelete": "Delete this inspiration?",
+    "loading": "Loading…",
+    "empty": "No inspirations yet. Create one to get started."
   }
 }

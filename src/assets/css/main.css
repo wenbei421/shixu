@@ -40,3 +40,42 @@ button {
 a {
   text-decoration: none;
 }
+
+/* Tauri titlebar: interactive controls must opt out of window drag */
+.no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Ensure drag regions actually receive hits (and work on WebView2) */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* 恢复输入框可选中/可输入（body 全局 user-select: none） */
+input,
+textarea {
+  user-select: text;
+  cursor: text;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/*
+ * Decorum overlay 默认铺满顶栏并拦截点击，导致搜索框无法聚焦。
+ * 容器穿透，仅窗控可点；高度与顶栏统一为 40px。
+ */
+div[data-tauri-decorum-tb] {
+  height: 40px !important;
+  pointer-events: none !important;
+  background: transparent !important;
+}
+
+button.decorum-tb-btn {
+  width: 46px !important;
+  height: 40px !important;
+  pointer-events: auto !important;
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+}

@@ -20,6 +20,7 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@icreate/minimal-ai-editor": "^0.0.18",
     "@lucide/vue": "^1.28.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/api": "^2.11.1",

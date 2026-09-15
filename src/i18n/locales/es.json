@@ -1,6 +1,45 @@
 {
+  "brand": {
+    "name": "拾序 OS",
+    "english": "SHIXU OS"
+  },
+  "nav": {
+    "home": "Resumen",
+    "inspiration": "Inspiración",
+    "timeline": "Línea de tiempo",
+    "insight": "Perspectivas",
+    "report": "Informe diario",
+    "plan": "Plan",
+    "settings": "Ajustes"
+  },
+  "topbar": {
+    "searchPlaceholder": "Buscar fragmentos, tareas, proyectos, apps…",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Cerrar"
+  },
+  "sidebar": {
+    "workspace": "Espacio de trabajo",
+    "system": "Sistema",
+    "local": "Local",
+    "todayFragments": "Fragmentos de hoy",
+    "localOnly": "Solo local"
+  },
+  "statusbar": {
+    "contextIdle": "Context Engine en espera",
+    "active": "Activo",
+    "focus": "Enfoque",
+    "fragments": "{count} fragmentos",
+    "sqliteReady": "SQLite listo",
+    "sqliteOffline": "SQLite desconectado",
+    "aiIdle": "AI Core desconectado"
+  },
+  "pages": {
+    "placeholder": "El esqueleto de {name} está listo. El contenido se conectará después."
+  },
   "home": {
-    "label": "Inicio"
+    "label": "Resumen"
   },
   "languages": {
     "label": "Idiomas"
@@ -15,5 +54,32 @@
       "dark": "Oscuro",
       "system": "Sistema"
     }
+  },
+  "inspiration": {
+    "categories": "Categorías",
+    "all": "Todas",
+    "addCategory": "Añadir categoría",
+    "newCategory": "Nombre de categoría",
+    "deleteCategory": "Eliminar categoría",
+    "confirmDeleteCategory": "Las ideas de esta categoría pasarán a Sin categoría. ¿Continuar?",
+    "tags": "Etiquetas",
+    "manageTags": "Gestionar etiquetas",
+    "newTag": "Escribe una etiqueta y Enter",
+    "confirmDeleteTag": "Eliminar solo desvincula la etiqueta. ¿Continuar?",
+    "searchPlaceholder": "Buscar título o contenido…",
+    "create": "Nueva inspiración",
+    "edit": "Editar inspiración",
+    "detail": "Detalle",
+    "back": "Volver a la lista",
+    "title": "Título",
+    "titlePlaceholder": "Opcional; por defecto la primera línea",
+    "category": "Categoría",
+    "content": "Contenido",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirmDelete": "¿Eliminar esta inspiración?",
+    "loading": "Cargando…",
+    "empty": "Aún no hay inspiraciones. Crea una para empezar."
   }
 }

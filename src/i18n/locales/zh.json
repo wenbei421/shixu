@@ -1,6 +1,45 @@
 {
+  "brand": {
+    "name": "拾序 OS",
+    "english": "SHIXU OS"
+  },
+  "nav": {
+    "home": "今日总览",
+    "inspiration": "灵感",
+    "timeline": "时间线",
+    "insight": "洞察",
+    "report": "日报",
+    "plan": "计划",
+    "settings": "设置"
+  },
+  "topbar": {
+    "searchPlaceholder": "综合查询：片段 · 任务 · 项目 · 应用…",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "向下还原",
+    "close": "关闭"
+  },
+  "sidebar": {
+    "workspace": "工作区",
+    "system": "系统",
+    "local": "本地",
+    "todayFragments": "今日片段",
+    "localOnly": "全本地"
+  },
+  "statusbar": {
+    "contextIdle": "Context Engine 待命",
+    "active": "活跃",
+    "focus": "专注",
+    "fragments": "{count} 片段",
+    "sqliteReady": "SQLite 就绪",
+    "sqliteOffline": "SQLite 未连接",
+    "aiIdle": "AI Core 未连接"
+  },
+  "pages": {
+    "placeholder": "{name}模块骨架已就绪，业务内容稍后接入。"
+  },
   "home": {
-    "label": "首页"
+    "label": "今日总览"
   },
   "languages": {
     "label": "语言"
@@ -15,5 +54,32 @@
       "dark": "深色",
       "system": "系统"
     }
+  },
+  "inspiration": {
+    "categories": "分类",
+    "all": "全部",
+    "addCategory": "添加分类",
+    "newCategory": "新分类名称",
+    "deleteCategory": "删除分类",
+    "confirmDeleteCategory": "删除后该类灵感将归入「未分类」，确定？",
+    "tags": "标签",
+    "manageTags": "管理标签",
+    "newTag": "输入标签并回车",
+    "confirmDeleteTag": "删除标签只会解除关联，确定？",
+    "searchPlaceholder": "搜索标题或正文…",
+    "create": "新建灵感",
+    "edit": "编辑灵感",
+    "detail": "灵感详情",
+    "back": "返回列表",
+    "title": "标题",
+    "titlePlaceholder": "可选，默认取正文首行",
+    "category": "分类",
+    "content": "正文",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirmDelete": "确定删除这条灵感？",
+    "loading": "加载中…",
+    "empty": "还没有灵感，点右上角新建一条吧"
   }
 }

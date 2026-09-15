@@ -11,6 +11,31 @@ const routes = [
         component: () => import('@/pages/home.vue'),
       },
       {
+        path: 'timeline',
+        name: 'timeline',
+        component: () => import('@/pages/timeline.vue'),
+      },
+      {
+        path: 'insight',
+        name: 'insight',
+        component: () => import('@/pages/insight.vue'),
+      },
+      {
+        path: 'report',
+        name: 'report',
+        component: () => import('@/pages/report.vue'),
+      },
+      {
+        path: 'plan',
+        name: 'plan',
+        component: () => import('@/pages/plan.vue'),
+      },
+      {
+        path: 'inspiration',
+        name: 'inspiration',
+        component: () => import('@/pages/inspiration.vue'),
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/pages/settings.vue'),

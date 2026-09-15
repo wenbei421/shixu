@@ -35,7 +35,7 @@ function handleLanguageSelect(newLocale: string) {
 </script>
 
 <template>
-  <div class="container mx-auto">
+  <div class="container mx-auto max-h-full overflow-y-auto">
     <div class="space-y-0.5 p-10">
       <h2 class="text-2xl font-bold tracking-tight">
         {{ t('settings.label') }}
@@ -46,11 +46,11 @@ function handleLanguageSelect(newLocale: string) {
     </div>
     <Separator class="my-6" />
     <div class="space-y-8">
-      <div class="flex items-center space-x-2">
-        <Label class="text-lg font-medium" for="theme-switch">{{ t('settings.theme.label') }}</Label>
+      <div class="flex flex-wrap items-center gap-4">
+        <Label class="text-lg font-medium">{{ t('settings.theme.label') }}</Label>
         <ThemeSwitch />
       </div>
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center gap-2">
         <Label class="text-lg font-medium" for="language-select">{{ t('languages.label') }}</Label>
         <Select id="language-select" v-model="locale">
           <SelectTrigger>

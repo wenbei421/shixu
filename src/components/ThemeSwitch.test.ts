@@ -4,9 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import ThemeSwitch from './ThemeSwitch.vue'
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-const mockSetSetting = vi.fn()
-
 vi.mock('@tauri-apps/plugin-store', () => {
   class MockLazyStore {
     get = vi.fn()
@@ -56,24 +53,18 @@ describe('themeSwitch', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the trigger button', () => {
+  it('renders radio options for light, dark, and system', () => {
     const wrapper = mountThemeSwitch()
-    const button = wrapper.find('button')
-    expect(button.exists()).toBe(true)
+    const radios = wrapper.findAll('[data-slot="radio-group-item"]')
+    expect(radios).toHaveLength(3)
+    expect(wrapper.text()).toContain('Light')
+    expect(wrapper.text()).toContain('Dark')
+    expect(wrapper.text()).toContain('System')
   })
 
-  it('contains a screen-reader label', () => {
+  it('exposes an accessible theme group label', () => {
     const wrapper = mountThemeSwitch()
-    const srOnly = wrapper.find('.sr-only')
-    expect(srOnly.exists()).toBe(true)
-    expect(srOnly.text()).toBe('Theme')
-  })
-
-  it('renders sun and moon icons', () => {
-    const wrapper = mountThemeSwitch()
-    const svgs = wrapper.findAll('svg')
-    expect(svgs.length).toBe(2)
-    expect(svgs[0].classes()).toContain('scale-100')
-    expect(svgs[1].classes()).toContain('scale-0')
+    const group = wrapper.find('[data-slot="radio-group"]')
+    expect(group.attributes('aria-label')).toBe('Theme')
   })
 })

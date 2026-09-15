@@ -1,41 +1,65 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue'
+import type { Component } from 'vue'
+import { Monitor, Moon, Sun } from '@lucide/vue'
 import { useColorMode } from '@vueuse/core'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-
+import { buttonVariants } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { cn } from '@/lib/utils'
 import { useSettingsStore } from '@/stores/settings'
+
+type ThemeMode = 'light' | 'dark' | 'auto'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
-const mode = useColorMode()
+const mode = useColorMode({ emitAuto: true })
 
-function handleThemeChange(theme: 'light' | 'dark' | 'auto') {
-  mode.value = theme
-  settingsStore.setSetting<string>('theme', theme)
-}
+const themeOptions: { value: ThemeMode, labelKey: string, icon: Component }[] = [
+  { value: 'light', labelKey: 'settings.theme.light', icon: Sun },
+  { value: 'dark', labelKey: 'settings.theme.dark', icon: Moon },
+  { value: 'auto', labelKey: 'settings.theme.system', icon: Monitor },
+]
+
+const theme = computed({
+  get: () => (mode.value === 'dark' || mode.value === 'light' ? mode.value : 'auto') as ThemeMode,
+  set: (value: ThemeMode) => {
+    mode.value = value
+    void settingsStore.setSetting<string>('theme', value)
+  },
+})
 </script>
 
 <template>
-  <DropdownMenu>
-    <DropdownMenuTrigger as-child>
-      <Button variant="outline">
-        <Icon icon="ph:sun-duotone" class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-        <Icon icon="ph:moon-stars-duotone" class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        <span class="sr-only">{{ t('settings.theme.label') }}</span>
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="handleThemeChange('light')">
-        {{ t('settings.theme.light') }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="handleThemeChange('dark')">
-        {{ t('settings.theme.dark') }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="handleThemeChange('auto')">
-        {{ t('settings.theme.system') }}
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+  <RadioGroup
+    v-model="theme"
+    class="flex flex-row flex-wrap items-center gap-2"
+    :aria-label="t('settings.theme.label')"
+  >
+    <div
+      v-for="option in themeOptions"
+      :key="option.value"
+      class="relative"
+    >
+      <RadioGroupItem
+        :id="`theme-${option.value}`"
+        :value="option.value"
+        class="peer sr-only"
+      />
+      <Label
+        :for="`theme-${option.value}`"
+        :class="cn(
+          buttonVariants({
+            variant: theme === option.value ? 'default' : 'outline',
+            size: 'sm',
+          }),
+          'cursor-pointer gap-1.5',
+        )"
+      >
+        <component :is="option.icon" />
+        {{ t(option.labelKey) }}
+      </Label>
+    </div>
+  </RadioGroup>
 </template>
