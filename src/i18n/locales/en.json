@@ -66,6 +66,7 @@
     "manageTags": "Manage tags",
     "newTag": "Type a tag and press Enter",
     "confirmDeleteTag": "Deleting a tag only unlinks it. Continue?",
+    "deleteTag": "Delete tag",
     "searchPlaceholder": "Search title or body…",
     "create": "New inspiration",
     "edit": "Edit inspiration",

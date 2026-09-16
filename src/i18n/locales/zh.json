@@ -66,6 +66,7 @@
     "manageTags": "管理标签",
     "newTag": "输入标签并回车",
     "confirmDeleteTag": "删除标签只会解除关联，确定？",
+    "deleteTag": "删除标签",
     "searchPlaceholder": "搜索标题或正文…",
     "create": "新建灵感",
     "edit": "编辑灵感",

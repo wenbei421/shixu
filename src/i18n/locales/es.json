@@ -66,6 +66,7 @@
     "manageTags": "Gestionar etiquetas",
     "newTag": "Escribe una etiqueta y Enter",
     "confirmDeleteTag": "Eliminar solo desvincula la etiqueta. ¿Continuar?",
+    "deleteTag": "Eliminar etiqueta",
     "searchPlaceholder": "Buscar título o contenido…",
     "create": "Nueva inspiración",
     "edit": "Editar inspiración",

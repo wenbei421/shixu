@@ -2,6 +2,7 @@
 import { ArrowLeft, Lightbulb, Pencil, Plus, Search, Tag, Trash2, X } from '@lucide/vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import InspirationEditor from '@/components/inspiration/InspirationEditor.vue'
 import InspirationPreview from '@/components/inspiration/InspirationPreview.vue'
 import { Badge } from '@/components/ui/badge'
@@ -53,6 +54,26 @@ const tagManagerOpen = ref(false)
 const saving = ref(false)
 /** 对齐 RDPMS：编辑器一旦挂载，edit↔view 用 v-show，避免 TipTap BubbleMenu 卸载竞态 */
 const editorMounted = ref(false)
+
+const confirmOpen = ref(false)
+const confirmTitle = ref('')
+const confirmDescription = ref('')
+let confirmResolve: ((ok: boolean) => void) | null = null
+
+function requestConfirm(title: string, description: string) {
+  confirmTitle.value = title
+  confirmDescription.value = description
+  confirmOpen.value = true
+  return new Promise<boolean>((resolve) => {
+    confirmResolve = resolve
+  })
+}
+
+function onConfirmResult(ok: boolean) {
+  confirmOpen.value = false
+  confirmResolve?.(ok)
+  confirmResolve = null
+}
 
 const isEditing = computed(() => sheetMode.value === 'create' || sheetMode.value === 'edit')
 const editorKey = computed(() => `insp-${detail.value?.id ?? 'draft'}`)
@@ -196,7 +217,11 @@ async function save() {
 async function removeCurrent() {
   if (!detail.value)
     return
-  if (!window.confirm(t('inspiration.confirmDelete')))
+  const ok = await requestConfirm(
+    t('inspiration.delete'),
+    t('inspiration.confirmDelete'),
+  )
+  if (!ok)
     return
   await deleteInspiration(detail.value.id)
   closePanel()
@@ -215,7 +240,11 @@ async function addCategory() {
 async function removeCategory(id: string) {
   if (id === UNCLASSIFIED_CATEGORY_ID)
     return
-  if (!window.confirm(t('inspiration.confirmDeleteCategory')))
+  const ok = await requestConfirm(
+    t('inspiration.deleteCategory'),
+    t('inspiration.confirmDeleteCategory'),
+  )
+  if (!ok)
     return
   await deleteCategory(id)
   if (selectedCategoryId.value === id)
@@ -251,7 +280,11 @@ async function addFormTag() {
 }
 
 async function removeTag(id: string) {
-  if (!window.confirm(t('inspiration.confirmDeleteTag')))
+  const ok = await requestConfirm(
+    t('inspiration.deleteTag'),
+    t('inspiration.confirmDeleteTag'),
+  )
+  if (!ok)
     return
   await deleteTag(id)
   selectedTagIds.value = selectedTagIds.value.filter(x => x !== id)
@@ -539,4 +572,14 @@ async function removeTag(id: string) {
       </template>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="confirmOpen"
+    :title="confirmTitle"
+    :description="confirmDescription"
+    :confirm-label="t('inspiration.delete')"
+    :cancel-label="t('inspiration.cancel')"
+    @confirm="onConfirmResult(true)"
+    @cancel="onConfirmResult(false)"
+  />
 </template>
