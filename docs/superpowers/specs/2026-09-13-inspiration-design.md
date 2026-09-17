@@ -32,7 +32,7 @@
 | 图片存储 | base64 内嵌 `body_html`，单张约 ≤2MB |
 | 标签 | 录入时可现打现建 + 独立「管理标签」 |
 | 主键 | **雪花 ID**（64-bit / 十进制约 18～19 位；与日后服务端同形，避免迁移转换） |
-| SQLite 路径 | **暂留 appData**（`shixu.db`）；后续可再迁文档目录 |
+| SQLite 路径 | **暂留 appData**；开发 `shixu.dev.db` / 生产 `shixu.db`；后续可再迁文档目录 |
 | 明确不做（MVP） | 全局快捷键、第三方自动抓取、标签合并、云同步、导出、AI 侧栏 |
 
 ---
@@ -159,7 +159,7 @@ FOREIGN KEY ... ON DELETE CASCADE
 
 错误：通过现有 `AppError` 扩展业务变体（如 NotFound）。
 
-数据库路径：**保持** `app.path().app_data_dir()/shixu.db`（决策 B）。
+数据库路径：**保持** `app.path().app_data_dir()`（决策 B）；文件名按构建环境隔离——`tauri dev` → `shixu.dev.db`，`tauri build` → `shixu.db`。
 
 ---
 
@@ -204,7 +204,7 @@ UI：优先 shadcn-vue（Button、Sheet、Input、Badge、Separator、Dialog 等
 ## 9. 架构关系
 
 ```
-Vue 灵感页 ──invoke──► Tauri commands ──► sqlx SqlitePool (appData/shixu.db)
+Vue 灵感页 ──invoke──► Tauri commands ──► sqlx SqlitePool (appData/shixu[.dev].db)
                 │
                 └── MinimalAiEditor (html + text；图片 base64 在 html 内)
 ```

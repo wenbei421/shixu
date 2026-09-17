@@ -11,7 +11,11 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Sqlite, SqliteConnection, Transaction, query::QueryAs, sqlite::SqliteArguments};
 use tauri::Manager;
 
-use crate::{error::AppError, id, sqlite::Db};
+use crate::{
+    error::AppError,
+    id,
+    sqlite::{self, Db},
+};
 
 /// 正文长度上限（BR-01-02）
 const MAX_CONTENT_CHARS: usize = 10_000;
@@ -853,7 +857,7 @@ fn validate_project_status(status: &str) -> Result<(), AppError> {
 }
 
 fn backup_dir(app_data: &Path) -> PathBuf {
-    app_data.join("muse-backups")
+    sqlite::muse_backup_dir(app_data)
 }
 
 fn file_mtime_ms(path: &Path) -> i64 {
@@ -1424,7 +1428,7 @@ pub async fn restore_muse_db(app: tauri::AppHandle, path: String) -> Result<(), 
     }
 
     let app_data = app.path().app_data_dir()?;
-    let pending = app_data.join("shixu.db.pending_restore");
+    let pending = sqlite::pending_restore_path(&app_data);
     if pending.exists() {
         std::fs::remove_file(&pending)?;
     }
