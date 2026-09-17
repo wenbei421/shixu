@@ -9,6 +9,7 @@ import {
   Home,
   Lightbulb,
   Settings,
+  Sparkles,
 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -52,6 +53,7 @@ interface NavItem {
 const primaryItems: NavItem[] = [
   { titleKey: 'nav.home', path: '/home', icon: Home },
   { titleKey: 'nav.inspiration', path: '/inspiration', icon: Lightbulb },
+  { titleKey: 'nav.muse', path: '/muse', icon: Sparkles },
   { titleKey: 'nav.timeline', path: '/timeline', icon: Clock3 },
   { titleKey: 'nav.insight', path: '/insight', icon: BarChart3 },
   { titleKey: 'nav.report', path: '/report', icon: FileText },

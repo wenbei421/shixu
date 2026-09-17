@@ -36,6 +36,11 @@ const routes = [
         component: () => import('@/pages/inspiration.vue'),
       },
       {
+        path: 'muse',
+        name: 'muse',
+        component: () => import('@/pages/muse.vue'),
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/pages/settings.vue'),

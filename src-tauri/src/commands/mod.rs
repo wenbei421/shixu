@@ -1,6 +1,8 @@
 mod inspiration;
+mod muse;
 
 pub use inspiration::*;
+pub use muse::*;
 
 use serde::Serialize;
 
