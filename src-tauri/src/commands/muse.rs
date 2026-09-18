@@ -5,7 +5,7 @@
 //! 全文检索走 FTS5 虚表 `muse_notes_fts`（由触发器维护）。
 
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Sqlite, SqliteConnection, Transaction, query::QueryAs, sqlite::SqliteArguments};
@@ -14,6 +14,7 @@ use tauri::Manager;
 use crate::{
     error::AppError,
     id,
+    id::now_ms,
     sqlite::{self, Db},
 };
 
@@ -37,13 +38,6 @@ const TAG_PALETTE: [&str; 10] = [
     "#5b5bd6", "#e0872b", "#22a06b", "#e5484d", "#3b82f6", "#8b5cf6", "#0d9488", "#d946ef",
     "#0891b2", "#ca8a04",
 ];
-
-fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or_default()
-}
 
 fn tag_color(name: &str) -> &'static str {
     let mut hash: u32 = 0;
@@ -318,7 +312,7 @@ fn parse_capture(raw: &str) -> ParsedCapture {
 }
 
 async fn ensure_tag(tx: &mut SqliteConnection, name: &str, now: i64) -> Result<i64, AppError> {
-    if let Some(existing) = sqlx::query_scalar::<_, i64>("SELECT id FROM muse_tags WHERE name = ?")
+    if let Some(existing) = sqlx::query_scalar::<_, i64>("SELECT id FROM sys_tags WHERE name = ?")
         .bind(name)
         .fetch_optional(&mut *tx)
         .await?
@@ -327,7 +321,7 @@ async fn ensure_tag(tx: &mut SqliteConnection, name: &str, now: i64) -> Result<i
     }
 
     let id = id::next_id()?;
-    sqlx::query("INSERT INTO muse_tags (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO sys_tags (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
         .bind(id)
         .bind(name)
         .bind(tag_color(name))
@@ -340,7 +334,7 @@ async fn ensure_tag(tx: &mut SqliteConnection, name: &str, now: i64) -> Result<i
 
 async fn ensure_project(tx: &mut SqliteConnection, name: &str, now: i64) -> Result<i64, AppError> {
     if let Some(existing) =
-        sqlx::query_scalar::<_, i64>("SELECT id FROM muse_projects WHERE name = ?")
+        sqlx::query_scalar::<_, i64>("SELECT id FROM sys_projects WHERE name = ?")
             .bind(name)
             .fetch_optional(&mut *tx)
             .await?
@@ -350,7 +344,7 @@ async fn ensure_project(tx: &mut SqliteConnection, name: &str, now: i64) -> Resu
 
     let id = id::next_id()?;
     sqlx::query(
-        "INSERT INTO muse_projects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
+        "INSERT INTO sys_projects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
     )
     .bind(id)
     .bind(name)
@@ -425,7 +419,7 @@ pub async fn list_muse_notes(
             sql.push_str(
                 " AND n.archived_at IS NULL AND n.id IN (\
                    SELECT nt.note_id FROM muse_note_tags nt \
-                   JOIN muse_tags t ON t.id = nt.tag_id WHERE t.name = ?)",
+                   JOIN sys_tags t ON t.id = nt.tag_id WHERE t.name = ?)",
             );
             binds.push(Bind::Text(name.to_string()));
         }
@@ -436,7 +430,7 @@ pub async fn list_muse_notes(
                 .ok_or_else(|| AppError::Invalid("project filter requires a value".into()))?;
             sql.push_str(
                 " AND n.archived_at IS NULL \
-                 AND n.project_id = (SELECT id FROM muse_projects WHERE name = ?)",
+                 AND n.project_id = (SELECT id FROM sys_projects WHERE name = ?)",
             );
             binds.push(Bind::Text(name.to_string()));
         }
@@ -528,7 +522,7 @@ pub async fn list_muse_projects(db: tauri::State<'_, Db>) -> Result<Vec<ProjectD
     let rows: Vec<ProjectStatRow> = sqlx::query_as(
         "SELECT s.id, s.name, s.color, s.status, s.note_count, s.done_count \
          FROM v_muse_project_stats s \
-         JOIN muse_projects p ON p.id = s.id \
+         JOIN sys_projects p ON p.id = s.id \
          WHERE p.deleted_at IS NULL \
          ORDER BY s.note_count DESC, s.name ASC",
     )
@@ -779,7 +773,7 @@ pub async fn remove_muse_tag_from_note(
     let mut tx: Transaction<'_, Sqlite> = db.pool.begin().await?;
     sqlx::query(
         "DELETE FROM muse_note_tags WHERE note_id = ? \
-         AND tag_id = (SELECT id FROM muse_tags WHERE name = ?)",
+         AND tag_id = (SELECT id FROM sys_tags WHERE name = ?)",
     )
     .bind(nid)
     .bind(tag_name.trim().trim_start_matches('#'))
@@ -890,7 +884,7 @@ async fn fetch_project(db: &Db, project_id: i64) -> Result<ProjectDto, AppError>
     let row: ProjectStatRow = sqlx::query_as(
         "SELECT s.id, s.name, s.color, s.status, s.note_count, s.done_count \
          FROM v_muse_project_stats s \
-         JOIN muse_projects p ON p.id = s.id \
+         JOIN sys_projects p ON p.id = s.id \
          WHERE s.id = ? AND p.deleted_at IS NULL",
     )
     .bind(project_id)
@@ -937,12 +931,12 @@ pub async fn list_muse_trash(db: tauri::State<'_, Db>) -> Result<Vec<NoteDto>, A
           COALESCE((
             SELECT group_concat(t.name, ',')
             FROM muse_note_tags nt
-            JOIN muse_tags t ON t.id = nt.tag_id
+            JOIN sys_tags t ON t.id = nt.tag_id
             WHERE nt.note_id = n.id
           ), '') AS tags_text,
           n.pinned, n.archived_at, n.deleted_at, n.created_at, n.updated_at
         FROM muse_notes n
-        LEFT JOIN muse_projects p ON p.id = n.project_id
+        LEFT JOIN sys_projects p ON p.id = n.project_id
         WHERE n.deleted_at IS NOT NULL
         ORDER BY n.deleted_at DESC
         "#,
@@ -1017,7 +1011,7 @@ pub async fn rename_muse_tag(
     }
 
     let conflict: Option<i64> = sqlx::query_scalar(
-        "SELECT id FROM muse_tags WHERE name = ? AND id != ?",
+        "SELECT id FROM sys_tags WHERE name = ? AND id != ?",
     )
     .bind(&name)
     .bind(tag_id)
@@ -1028,7 +1022,7 @@ pub async fn rename_muse_tag(
     }
 
     let mut tx = db.pool.begin().await?;
-    let res = sqlx::query("UPDATE muse_tags SET name = ?, updated_at = ? WHERE id = ?")
+    let res = sqlx::query("UPDATE sys_tags SET name = ?, updated_at = ? WHERE id = ?")
         .bind(&name)
         .bind(now_ms())
         .bind(tag_id)
@@ -1065,7 +1059,7 @@ pub async fn update_muse_tag_color(
         return Err(AppError::Invalid("color required".into()));
     }
 
-    let res = sqlx::query("UPDATE muse_tags SET color = ?, updated_at = ? WHERE id = ?")
+    let res = sqlx::query("UPDATE sys_tags SET color = ?, updated_at = ? WHERE id = ?")
         .bind(&color)
         .bind(now_ms())
         .bind(tag_id)
@@ -1093,11 +1087,11 @@ pub async fn merge_muse_tags(
     let mut tx = db.pool.begin().await?;
 
     let from_exists: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM muse_tags WHERE id = ?")
+        sqlx::query_scalar("SELECT id FROM sys_tags WHERE id = ?")
             .bind(from)
             .fetch_optional(&mut *tx)
             .await?;
-    let to_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM muse_tags WHERE id = ?")
+    let to_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM sys_tags WHERE id = ?")
         .bind(to)
         .fetch_optional(&mut *tx)
         .await?;
@@ -1122,7 +1116,7 @@ pub async fn merge_muse_tags(
         .execute(&mut *tx)
         .await?;
 
-    sqlx::query("DELETE FROM muse_tags WHERE id = ?")
+    sqlx::query("DELETE FROM sys_tags WHERE id = ?")
         .bind(from)
         .execute(&mut *tx)
         .await?;
@@ -1135,7 +1129,7 @@ pub async fn merge_muse_tags(
 #[tauri::command]
 pub async fn delete_muse_tag(db: tauri::State<'_, Db>, id: String) -> Result<(), AppError> {
     let tag_id = id::parse_id(&id)?;
-    let res = sqlx::query("DELETE FROM muse_tags WHERE id = ?")
+    let res = sqlx::query("DELETE FROM sys_tags WHERE id = ?")
         .bind(tag_id)
         .execute(&db.pool)
         .await?;
@@ -1158,7 +1152,7 @@ pub async fn create_muse_project(
     }
 
     let existing: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM muse_projects WHERE name = ? AND deleted_at IS NULL")
+        sqlx::query_scalar("SELECT id FROM sys_projects WHERE name = ? AND deleted_at IS NULL")
             .bind(&name)
             .fetch_optional(&db.pool)
             .await?;
@@ -1169,7 +1163,7 @@ pub async fn create_muse_project(
     let pid = id::next_id()?;
     let now = now_ms();
     sqlx::query(
-        "INSERT INTO muse_projects (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO sys_projects (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
     )
     .bind(pid)
     .bind(&name)
@@ -1200,7 +1194,7 @@ pub async fn update_muse_project(
             return Err(AppError::Invalid("project name required".into()));
         }
         let conflict: Option<i64> = sqlx::query_scalar(
-            "SELECT id FROM muse_projects WHERE name = ? AND id != ? AND deleted_at IS NULL",
+            "SELECT id FROM sys_projects WHERE name = ? AND id != ? AND deleted_at IS NULL",
         )
         .bind(name)
         .bind(project_id)
@@ -1216,7 +1210,7 @@ pub async fn update_muse_project(
 
     if let Some(name) = req.name.as_ref().map(|s| s.trim().to_string()) {
         let res = sqlx::query(
-            "UPDATE muse_projects SET name = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
+            "UPDATE sys_projects SET name = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )
         .bind(&name)
         .bind(now)
@@ -1235,7 +1229,7 @@ pub async fn update_muse_project(
     }
     if let Some(color) = &req.color {
         sqlx::query(
-            "UPDATE muse_projects SET color = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
+            "UPDATE sys_projects SET color = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )
         .bind(color)
         .bind(now)
@@ -1245,7 +1239,7 @@ pub async fn update_muse_project(
     }
     if let Some(status) = &req.status {
         sqlx::query(
-            "UPDATE muse_projects SET status = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
+            "UPDATE sys_projects SET status = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )
         .bind(status)
         .bind(now)
@@ -1255,7 +1249,7 @@ pub async fn update_muse_project(
     }
     if let Some(description) = &req.description {
         sqlx::query(
-            "UPDATE muse_projects SET description = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
+            "UPDATE sys_projects SET description = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )
         .bind(description)
         .bind(now)
@@ -1268,25 +1262,28 @@ pub async fn update_muse_project(
     fetch_project(&db, project_id).await
 }
 
-/// 删除项目：仅当无灵感关联（含归档，不含已进回收站的）
+/// 删除项目：仅当无灵感、无待办关联（含归档，不含已进回收站的）
+/// sys_projects 为灵感库与待办共用，两侧都要校验
 #[tauri::command]
 pub async fn delete_muse_project(db: tauri::State<'_, Db>, id: String) -> Result<(), AppError> {
     let project_id = id::parse_id(&id)?;
     let linked: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM muse_notes WHERE project_id = ? AND deleted_at IS NULL",
+        "SELECT (SELECT COUNT(*) FROM muse_notes WHERE project_id = ? AND deleted_at IS NULL) \
+              + (SELECT COUNT(*) FROM todo_tasks WHERE project_id = ? AND deleted_at IS NULL)",
     )
+    .bind(project_id)
     .bind(project_id)
     .fetch_one(&db.pool)
     .await?;
     if linked > 0 {
         return Err(AppError::Invalid(format!(
-            "project still has {linked} notes; unlink them first"
+            "project still has {linked} notes/tasks; unlink them first"
         )));
     }
 
     let now = now_ms();
     let res = sqlx::query(
-        "UPDATE muse_projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
+        "UPDATE sys_projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
     )
     .bind(now)
     .bind(now)

@@ -5,7 +5,7 @@ import { Archive, Folder, Inbox, Layers, List, Plus, RotateCcw, Sun, Trash2 } fr
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { tagColor } from '@/lib/muse-format'
-import { CAPTURE_SHORTCUT } from '@/lib/muse-shortcuts'
+import { CAPTURE_SHORTCUT } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
 

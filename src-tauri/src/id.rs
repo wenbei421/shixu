@@ -15,9 +15,6 @@ use crate::error::AppError;
 /// 本地客户端固定 worker（规格：0..=15）
 pub const LOCAL_WORKER_ID: u16 = 0;
 
-/// 默认「未分类」分类的固定雪花 ID（十进制约 19 位量级常量，跨环境稳定）
-pub const UNCLASSIFIED_CATEGORY_ID: i64 = 1_930_000_000_000_000_001;
-
 /// 纪元：2024-01-01T00:00:00Z
 const EPOCH_MS: i64 = 1_704_067_200_000;
 
@@ -36,7 +33,8 @@ static STATE: Mutex<SnowflakeState> = Mutex::new(SnowflakeState {
     sequence: 0,
 });
 
-fn now_ms() -> i64 {
+/// 当前 Unix 毫秒。时钟早于 1970 时退回 [`EPOCH_MS`]，雪花 ID 与各表时间戳共用此实现。
+pub fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)

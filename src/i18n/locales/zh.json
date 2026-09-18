@@ -5,7 +5,7 @@
   },
   "nav": {
     "home": "今日总览",
-    "inspiration": "灵感",
+    "todo": "待办",
     "muse": "灵感库",
     "timeline": "时间线",
     "insight": "洞察",
@@ -80,34 +80,6 @@
       "label": "灵感库",
       "description": "标签、项目与本地备份。"
     }
-  },
-  "inspiration": {
-    "categories": "分类",
-    "all": "全部",
-    "addCategory": "添加分类",
-    "newCategory": "新分类名称",
-    "deleteCategory": "删除分类",
-    "confirmDeleteCategory": "删除后该类灵感将归入「未分类」，确定？",
-    "tags": "标签",
-    "manageTags": "管理标签",
-    "newTag": "输入标签并回车",
-    "confirmDeleteTag": "删除标签只会解除关联，确定？",
-    "deleteTag": "删除标签",
-    "searchPlaceholder": "搜索标题或正文…",
-    "create": "新建灵感",
-    "edit": "编辑灵感",
-    "detail": "灵感详情",
-    "back": "返回列表",
-    "title": "标题",
-    "titlePlaceholder": "可选，默认取正文首行",
-    "category": "分类",
-    "content": "正文",
-    "save": "保存",
-    "cancel": "取消",
-    "delete": "删除",
-    "confirmDelete": "确定删除这条灵感？",
-    "loading": "加载中…",
-    "empty": "还没有灵感，点右上角新建一条吧"
   },
   "muse": {
     "uncategorized": "未分类",
@@ -309,6 +281,74 @@
         "backedUp": "已备份到 {path}",
         "restoreQueued": "恢复已就绪，正在重启…"
       }
+    }
+  },
+  "todo": {
+    "title": "待办",
+    "add": "添加",
+    "createPlaceholder": "写下要做的事，回车添加",
+    "loading": "加载中…",
+    "empty": "暂无待办",
+    "selectHint": "选择一条待办查看详情",
+    "noDescription": "暂无描述",
+    "delete": "删除",
+    "nav": {
+      "inbox": "收集箱",
+      "today": "今天",
+      "upcoming": "即将到来",
+      "all": "全部",
+      "done": "已完成"
+    },
+    "fields": {
+      "status": "状态",
+      "priority": "优先级",
+      "project": "项目",
+      "title": "标题",
+      "description": "描述",
+      "due": "截止日期",
+      "tags": "标签",
+      "subtasks": "子待办"
+    },
+    "searchPlaceholder": "搜索标题或描述…",
+    "noProject": "无项目",
+    "tagPlaceholder": "输入标签，回车添加",
+    "status": {
+      "todo": "待办",
+      "doing": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    },
+    "priority": {
+      "none": "无",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "subtaskPlaceholder": "添加子待办，回车确认",
+    "priorityFilter": {
+      "group": "优先级",
+      "all": "全部"
+    },
+    "view": {
+      "card": "列表",
+      "board": "看板",
+      "timeline": "时间线"
+    },
+    "export": "导出 JSON",
+    "capture": {
+      "title": "快速添加",
+      "hint": "回车保存 · Esc 关闭",
+      "placeholder": "明天 18:00 提交周报 {hash}工作 {at}项目 ！高",
+      "insertTag": "插入标签",
+      "insertProject": "插入项目",
+      "close": "关闭",
+      "save": "保存"
+    },
+    "timeline": {
+      "overdue": "逾期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "noDue": "无日期"
     }
   }
 }

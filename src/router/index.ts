@@ -31,14 +31,14 @@ const routes = [
         component: () => import('@/pages/plan.vue'),
       },
       {
-        path: 'inspiration',
-        name: 'inspiration',
-        component: () => import('@/pages/inspiration.vue'),
-      },
-      {
         path: 'muse',
         name: 'muse',
         component: () => import('@/pages/muse.vue'),
+      },
+      {
+        path: 'todo',
+        name: 'todo',
+        component: () => import('@/pages/todo.vue'),
       },
       {
         path: 'settings',

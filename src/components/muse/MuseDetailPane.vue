@@ -330,212 +330,212 @@ defineExpose({
       </template>
 
       <template v-else>
-      <div class="flex items-center gap-2">
-        <MuseStatusBadge :status="note.status" />
-        <span class="text-muted-foreground ml-auto text-[11px]">
-          {{ t('muse.detail.createdAt', { time: relativeTime(note.createdAt, locale) }) }}
-        </span>
-        <button
-          type="button"
-          class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex size-6 items-center justify-center rounded-md transition-colors"
-          :title="t('muse.detail.delete')"
-          @click="confirmDeleteOpen = true"
-        >
-          <Trash2 class="size-3.5" />
-        </button>
-      </div>
-
-      <div
-        ref="contentEl"
-        class="bg-card border-border focus:border-primary focus:ring-primary/15 rounded-lg border px-3.5 py-3 text-[13.5px] leading-relaxed break-words whitespace-pre-wrap outline-none transition-colors focus:ring-3"
-        contenteditable="true"
-        spellcheck="false"
-        role="textbox"
-        :aria-label="t('muse.detail.contentLabel')"
-        @blur="commitContent"
-        @keydown="onContentKeydown"
-      />
-
-      <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
-        {{ t('muse.detail.sectionStatus') }}
-      </p>
-      <div class="grid grid-cols-2 gap-1.5">
-        <button
-          v-for="status in STATUS_ORDER"
-          :key="status"
-          type="button"
-          :class="cn(
-            'bg-card flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-colors',
-            note.status === status
-              ? 'font-semibold'
-              : 'border-border text-muted-foreground hover:border-muted-foreground/40',
-          )"
-          :style="note.status === status
-            ? {
-              color: STATUS_META[status].color,
-              borderColor: STATUS_META[status].color,
-              boxShadow: `0 0 0 3px ${STATUS_META[status].soft}`,
-            }
-            : undefined"
-          @click="setStatus(status)"
-        >
-          <span
-            class="size-[7px] shrink-0 rounded-full"
-            :style="{ background: STATUS_META[status].color }"
-          />
-          {{ t(`muse.status.${status}`) }}
-        </button>
-      </div>
-
-      <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
-        {{ t('muse.detail.sectionTags') }}
-      </p>
-      <div class="flex flex-wrap items-center gap-1.5">
-        <span
-          v-for="tag in note.tags"
-          :key="tag"
-          class="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2.5 text-[11.5px] font-medium"
-        >
-          #{{ tag }}
+        <div class="flex items-center gap-2">
+          <MuseStatusBadge :status="note.status" />
+          <span class="text-muted-foreground ml-auto text-[11px]">
+            {{ t('muse.detail.createdAt', { time: relativeTime(note.createdAt, locale) }) }}
+          </span>
           <button
             type="button"
-            class="hover:bg-primary/20 flex size-4 items-center justify-center rounded opacity-60 transition-opacity hover:opacity-100"
-            :title="t('muse.detail.removeTag')"
-            @click="removeTag(tag)"
+            class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex size-6 items-center justify-center rounded-md transition-colors"
+            :title="t('muse.detail.delete')"
+            @click="confirmDeleteOpen = true"
           >
-            <X class="size-3" />
-          </button>
-        </span>
-
-        <input
-          v-if="tagInputOpen"
-          v-model="tagDraft"
-          class="border-primary bg-background w-[88px] rounded-md border px-2 py-1 text-[11.5px] outline-none"
-          :placeholder="t('muse.detail.tagPlaceholder')"
-          autofocus
-          @blur="commitTag"
-          @keydown.enter.prevent="commitTag"
-          @keydown.esc.prevent="tagInputOpen = false"
-        >
-        <button
-          v-else
-          type="button"
-          class="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-md border border-dashed px-2.5 py-1 text-[11.5px] transition-colors"
-          @click="openTagInput"
-        >
-          {{ t('muse.detail.addTag') }}
-        </button>
-      </div>
-
-      <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
-        {{ t('muse.detail.sectionProject') }}
-      </p>
-      <input
-        v-if="projectInputOpen"
-        v-model="projectDraft"
-        class="border-primary bg-background w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none"
-        :placeholder="t('muse.detail.projectPlaceholder')"
-        autofocus
-        @blur="commitNewProject"
-        @keydown.enter.prevent="commitNewProject"
-        @keydown.esc.prevent="projectInputOpen = false"
-      >
-      <select
-        v-else
-        class="bg-card border-border text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none transition-colors focus:ring-3"
-        :value="note.projectName ?? ''"
-        @change="onProjectChange"
-      >
-        <option value="">
-          {{ t('muse.detail.noProject') }}
-        </option>
-        <option v-for="project in store.projects" :key="project.id" :value="project.name">
-          {{ project.name }}
-        </option>
-        <option :value="NEW_PROJECT_OPTION">
-          {{ t('muse.detail.newProject') }}
-        </option>
-      </select>
-
-      <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
-        {{ t('muse.detail.sectionSource') }}
-      </p>
-      <select
-        class="border-input bg-background focus:ring-ring h-8 w-full rounded-md border px-2 text-[12.5px] outline-none focus:ring-1"
-        :value="note.source"
-        @change="onSourceChange"
-      >
-        <option v-for="item in NOTE_SOURCES" :key="item" :value="item">
-          {{ t(`muse.source.${item}`) }}
-        </option>
-      </select>
-
-      <p class="text-muted-foreground flex items-center gap-1.5 text-[10.5px] font-semibold tracking-widest uppercase">
-        <Sparkles class="text-primary size-3" />
-        {{ t('muse.detail.sectionAi') }}
-      </p>
-      <div class="border-primary/20 bg-primary/5 rounded-lg border px-3.5 py-3 text-[12.5px] leading-relaxed">
-        <p>
-          <strong class="text-primary font-semibold">{{ t('muse.ai.keywords') }}</strong>
-          {{ aiKeywords }}
-        </p>
-        <p class="mt-0.5 flex items-center gap-1.5">
-          <strong class="text-primary font-semibold">{{ t('muse.ai.source') }}</strong>
-          <MuseSourceStamp :source="note.source" :timestamp="note.createdAt" />
-        </p>
-        <p class="mt-0.5">
-          <strong class="text-primary font-semibold">{{ t('muse.ai.advice') }}</strong>
-          {{ t(`muse.ai.suggestion.${note.status}`) }}
-        </p>
-        <div class="mt-2.5 flex flex-wrap gap-1.5">
-          <button
-            v-for="action in (['outline', 'relate', 'task'] as const)"
-            :key="action"
-            type="button"
-            class="bg-background border-primary/25 text-primary hover:bg-primary/10 rounded-md border px-2.5 py-1 text-[11px] transition-colors"
-            @click="onAiAction(action)"
-          >
-            {{ t(`muse.ai.action.${action}`) }}
+            <Trash2 class="size-3.5" />
           </button>
         </div>
-      </div>
 
-      <template v-if="store.related.length">
+        <div
+          ref="contentEl"
+          class="bg-card border-border focus:border-primary focus:ring-primary/15 rounded-lg border px-3.5 py-3 text-[13.5px] leading-relaxed break-words whitespace-pre-wrap outline-none transition-colors focus:ring-3"
+          contenteditable="true"
+          spellcheck="false"
+          role="textbox"
+          :aria-label="t('muse.detail.contentLabel')"
+          @blur="commitContent"
+          @keydown="onContentKeydown"
+        />
+
         <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
-          {{ t('muse.detail.sectionRelated', { count: store.related.length }) }}
+          {{ t('muse.detail.sectionStatus') }}
         </p>
-        <button
-          v-for="item in store.related"
-          :key="item.id"
-          type="button"
-          class="bg-card border-border hover:border-muted-foreground/40 text-muted-foreground flex flex-col gap-1.5 rounded-lg border px-3 py-2.5 text-left text-xs leading-relaxed transition-colors"
-          @click="store.select(item.id)"
-        >
-          <span class="line-clamp-2 break-words">{{ item.content }}</span>
-          <span class="text-muted-foreground/70 text-[10.5px]">
-            {{ item.tags.map(tag => `#${tag}`).join(' ') }} · {{ relativeTime(item.createdAt, locale) }}
-          </span>
-        </button>
-      </template>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button
+            v-for="status in STATUS_ORDER"
+            :key="status"
+            type="button"
+            :class="cn(
+              'bg-card flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-colors',
+              note.status === status
+                ? 'font-semibold'
+                : 'border-border text-muted-foreground hover:border-muted-foreground/40',
+            )"
+            :style="note.status === status
+              ? {
+                color: STATUS_META[status].color,
+                borderColor: STATUS_META[status].color,
+                boxShadow: `0 0 0 3px ${STATUS_META[status].soft}`,
+              }
+              : undefined"
+            @click="setStatus(status)"
+          >
+            <span
+              class="size-[7px] shrink-0 rounded-full"
+              :style="{ background: STATUS_META[status].color }"
+            />
+            {{ t(`muse.status.${status}`) }}
+          </button>
+        </div>
 
-      <div class="border-border mt-auto flex flex-wrap gap-2 border-t pt-3.5">
-        <button
-          type="button"
-          class="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm transition-colors"
-          @click="markDone"
+        <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
+          {{ t('muse.detail.sectionTags') }}
+        </p>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span
+            v-for="tag in note.tags"
+            :key="tag"
+            class="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2.5 text-[11.5px] font-medium"
+          >
+            #{{ tag }}
+            <button
+              type="button"
+              class="hover:bg-primary/20 flex size-4 items-center justify-center rounded opacity-60 transition-opacity hover:opacity-100"
+              :title="t('muse.detail.removeTag')"
+              @click="removeTag(tag)"
+            >
+              <X class="size-3" />
+            </button>
+          </span>
+
+          <input
+            v-if="tagInputOpen"
+            v-model="tagDraft"
+            class="border-primary bg-background w-[88px] rounded-md border px-2 py-1 text-[11.5px] outline-none"
+            :placeholder="t('muse.detail.tagPlaceholder')"
+            autofocus
+            @blur="commitTag"
+            @keydown.enter.prevent="commitTag"
+            @keydown.esc.prevent="tagInputOpen = false"
+          >
+          <button
+            v-else
+            type="button"
+            class="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-md border border-dashed px-2.5 py-1 text-[11.5px] transition-colors"
+            @click="openTagInput"
+          >
+            {{ t('muse.detail.addTag') }}
+          </button>
+        </div>
+
+        <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
+          {{ t('muse.detail.sectionProject') }}
+        </p>
+        <input
+          v-if="projectInputOpen"
+          v-model="projectDraft"
+          class="border-primary bg-background w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none"
+          :placeholder="t('muse.detail.projectPlaceholder')"
+          autofocus
+          @blur="commitNewProject"
+          @keydown.enter.prevent="commitNewProject"
+          @keydown.esc.prevent="projectInputOpen = false"
         >
-          <Check class="size-3.5" />
-          {{ t('muse.detail.markDone') }}
-        </button>
-        <button
-          type="button"
-          class="border-border bg-card text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-          @click="toggleArchive"
+        <select
+          v-else
+          class="bg-card border-border text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none transition-colors focus:ring-3"
+          :value="note.projectName ?? ''"
+          @change="onProjectChange"
         >
-          <component :is="note.archived ? ArchiveRestore : Archive" class="size-3.5" />
-          {{ note.archived ? t('muse.detail.unarchive') : t('muse.detail.archive') }}
-        </button>
-      </div>
+          <option value="">
+            {{ t('muse.detail.noProject') }}
+          </option>
+          <option v-for="project in store.projects" :key="project.id" :value="project.name">
+            {{ project.name }}
+          </option>
+          <option :value="NEW_PROJECT_OPTION">
+            {{ t('muse.detail.newProject') }}
+          </option>
+        </select>
+
+        <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
+          {{ t('muse.detail.sectionSource') }}
+        </p>
+        <select
+          class="border-input bg-background focus:ring-ring h-8 w-full rounded-md border px-2 text-[12.5px] outline-none focus:ring-1"
+          :value="note.source"
+          @change="onSourceChange"
+        >
+          <option v-for="item in NOTE_SOURCES" :key="item" :value="item">
+            {{ t(`muse.source.${item}`) }}
+          </option>
+        </select>
+
+        <p class="text-muted-foreground flex items-center gap-1.5 text-[10.5px] font-semibold tracking-widest uppercase">
+          <Sparkles class="text-primary size-3" />
+          {{ t('muse.detail.sectionAi') }}
+        </p>
+        <div class="border-primary/20 bg-primary/5 rounded-lg border px-3.5 py-3 text-[12.5px] leading-relaxed">
+          <p>
+            <strong class="text-primary font-semibold">{{ t('muse.ai.keywords') }}</strong>
+            {{ aiKeywords }}
+          </p>
+          <p class="mt-0.5 flex items-center gap-1.5">
+            <strong class="text-primary font-semibold">{{ t('muse.ai.source') }}</strong>
+            <MuseSourceStamp :source="note.source" :timestamp="note.createdAt" />
+          </p>
+          <p class="mt-0.5">
+            <strong class="text-primary font-semibold">{{ t('muse.ai.advice') }}</strong>
+            {{ t(`muse.ai.suggestion.${note.status}`) }}
+          </p>
+          <div class="mt-2.5 flex flex-wrap gap-1.5">
+            <button
+              v-for="action in (['outline', 'relate', 'task'] as const)"
+              :key="action"
+              type="button"
+              class="bg-background border-primary/25 text-primary hover:bg-primary/10 rounded-md border px-2.5 py-1 text-[11px] transition-colors"
+              @click="onAiAction(action)"
+            >
+              {{ t(`muse.ai.action.${action}`) }}
+            </button>
+          </div>
+        </div>
+
+        <template v-if="store.related.length">
+          <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
+            {{ t('muse.detail.sectionRelated', { count: store.related.length }) }}
+          </p>
+          <button
+            v-for="item in store.related"
+            :key="item.id"
+            type="button"
+            class="bg-card border-border hover:border-muted-foreground/40 text-muted-foreground flex flex-col gap-1.5 rounded-lg border px-3 py-2.5 text-left text-xs leading-relaxed transition-colors"
+            @click="store.select(item.id)"
+          >
+            <span class="line-clamp-2 break-words">{{ item.content }}</span>
+            <span class="text-muted-foreground/70 text-[10.5px]">
+              {{ item.tags.map(tag => `#${tag}`).join(' ') }} · {{ relativeTime(item.createdAt, locale) }}
+            </span>
+          </button>
+        </template>
+
+        <div class="border-border mt-auto flex flex-wrap gap-2 border-t pt-3.5">
+          <button
+            type="button"
+            class="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm transition-colors"
+            @click="markDone"
+          >
+            <Check class="size-3.5" />
+            {{ t('muse.detail.markDone') }}
+          </button>
+          <button
+            type="button"
+            class="border-border bg-card text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            @click="toggleArchive"
+          >
+            <component :is="note.archived ? ArchiveRestore : Archive" class="size-3.5" />
+            {{ note.archived ? t('muse.detail.unarchive') : t('muse.detail.archive') }}
+          </button>
+        </div>
       </template>
     </template>
   </aside>

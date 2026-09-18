@@ -14,8 +14,8 @@ import {
   isCaptureShortcut,
   isSearchShortcut,
   isTypingTarget,
-  statusIndexFromKey,
-} from '@/lib/muse-shortcuts'
+  numberIndexFromKey,
+} from '@/lib/shortcuts'
 import { useMuseStore } from '@/stores/muse'
 
 /** 首次进入后提示捕捉快捷键（原型 init） */
@@ -77,7 +77,7 @@ async function onKeydown(event: KeyboardEvent) {
     return
   }
 
-  const statusIndex = statusIndexFromKey(event)
+  const statusIndex = numberIndexFromKey(event, STATUS_ORDER.length)
   const status = statusIndex === null ? undefined : STATUS_ORDER[statusIndex]
   if (status && store.selectedNote) {
     event.preventDefault()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Language } from '@/lib/config'
 import type { Component } from 'vue'
 import type { MuseManageSection } from '@/components/muse/MuseManagePanel.vue'
+import type { Language } from '@/lib/config'
 import {
   FolderKanban,
   HardDrive,

@@ -43,19 +43,6 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             commands::get_db_status,
-            commands::list_inspiration_categories,
-            commands::create_inspiration_category,
-            commands::update_inspiration_category,
-            commands::delete_inspiration_category,
-            commands::list_inspiration_tags,
-            commands::create_inspiration_tag,
-            commands::update_inspiration_tag,
-            commands::delete_inspiration_tag,
-            commands::list_inspirations,
-            commands::get_inspiration,
-            commands::create_inspiration,
-            commands::update_inspiration,
-            commands::delete_inspiration,
             commands::list_muse_notes,
             commands::get_muse_note,
             commands::get_muse_note_counts,
@@ -89,6 +76,13 @@ pub fn run() {
             commands::list_muse_backups,
             commands::restore_muse_db,
             commands::restart_app,
+            commands::list_todo_tasks,
+            commands::list_todo_subtasks,
+            commands::create_todo_task,
+            commands::update_todo_task,
+            commands::complete_todo_task,
+            commands::delete_todo_task,
+            commands::export_todo_json,
         ])
         .setup(|app| {
             sqlite::set_db(app).map_err(|e| e.to_string())?;

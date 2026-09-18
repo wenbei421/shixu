@@ -14,8 +14,8 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:open': [open: boolean]
-  confirm: []
-  cancel: []
+  'confirm': []
+  'cancel': []
 }>()
 
 function onCancel() {
