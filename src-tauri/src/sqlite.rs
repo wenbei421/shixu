@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use sqlx::{
-    SqlitePool,
+    Acquire, SqlitePool,
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions},
 };
 use tauri::{App, Manager};
@@ -15,11 +15,7 @@ pub fn is_dev() -> bool {
 
 /// 主库文件名：开发用 `shixu.dev.db`，生产用 `shixu.db`
 pub fn db_file_name() -> &'static str {
-    if is_dev() {
-        "shixu.dev.db"
-    } else {
-        "shixu.db"
-    }
+    if is_dev() { "shixu.dev.db" } else { "shixu.db" }
 }
 
 /// 待恢复副本文件名（与主库同前缀，避免跨环境互相覆盖）
@@ -83,7 +79,58 @@ async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
     Ok(pool)
 }
 
-/// 若存在待恢复副本，在打开库之前覆盖正式库文件（FR-13 恢复流程）
+/// 删除当前环境的待恢复副本和 Muse 备份。主库文件保留。
+pub fn remove_runtime_data(app_data_dir: &Path) -> Result<(), AppError> {
+    let pending = pending_restore_path(app_data_dir);
+    if pending.exists() {
+        std::fs::remove_file(&pending)?;
+    }
+
+    let backups = muse_backup_dir(app_data_dir);
+    if backups.exists() {
+        std::fs::remove_dir_all(&backups)?;
+    }
+    Ok(())
+}
+
+/// 清空业务表。保留库文件和迁移记录，避免下次启动重跑种子数据。
+pub async fn clear_user_data(pool: &SqlitePool) -> Result<(), AppError> {
+    const TABLES: &[&str] = &[
+        "muse_reviews",
+        "muse_note_tags",
+        "todo_task_tags",
+        "muse_notes",
+        "todo_tasks",
+        "sys_tags",
+        "sys_projects",
+        "sys_settings",
+        "fragments",
+        "inspiration_tag_map",
+        "inspirations",
+        "inspiration_tags",
+        "inspiration_categories",
+    ];
+
+    let mut conn = pool.acquire().await?;
+    sqlx::query("PRAGMA foreign_keys = OFF")
+        .execute(&mut *conn)
+        .await?;
+    let cleared = async {
+        let mut tx = conn.begin().await?;
+        for table in TABLES {
+            let statement = format!("DELETE FROM {table}");
+            sqlx::query(&statement).execute(&mut *tx).await?;
+        }
+        tx.commit().await?;
+        Ok::<(), AppError>(())
+    }
+    .await;
+    sqlx::query("PRAGMA foreign_keys = ON")
+        .execute(&mut *conn)
+        .await?;
+    cleared
+}
+
 fn apply_pending_restore(app_data_dir: &Path) -> Result<(), AppError> {
     let pending = pending_restore_path(app_data_dir);
     if !pending.exists() {
@@ -110,7 +157,11 @@ pub fn set_db(app: &mut App) -> Result<(), AppError> {
     apply_pending_restore(&app_data_dir)?;
 
     let path = db_path(&app_data_dir);
-    let env_label = if is_dev() { "development" } else { "production" };
+    let env_label = if is_dev() {
+        "development"
+    } else {
+        "production"
+    };
     log::info!("SQLite database ({env_label}): {}", path.display());
 
     let handle = app.handle().clone();
@@ -132,7 +183,10 @@ mod tests {
         let backups = muse_backup_dir(root);
 
         if is_dev() {
-            assert_eq!(db.file_name().and_then(|n| n.to_str()), Some("shixu.dev.db"));
+            assert_eq!(
+                db.file_name().and_then(|n| n.to_str()),
+                Some("shixu.dev.db")
+            );
             assert_eq!(
                 pending.file_name().and_then(|n| n.to_str()),
                 Some("shixu.dev.db.pending_restore")

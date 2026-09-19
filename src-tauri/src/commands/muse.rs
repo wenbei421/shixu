@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Sqlite, SqliteConnection, Transaction, query::QueryAs, sqlite::SqliteArguments};
+use sqlx::{
+    FromRow, Sqlite, SqliteConnection, Transaction, query::QueryAs, sqlite::SqliteArguments,
+};
 use tauri::Manager;
 
 use crate::{
@@ -321,14 +323,16 @@ async fn ensure_tag(tx: &mut SqliteConnection, name: &str, now: i64) -> Result<i
     }
 
     let id = id::next_id()?;
-    sqlx::query("INSERT INTO sys_tags (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
-        .bind(id)
-        .bind(name)
-        .bind(tag_color(name))
-        .bind(now)
-        .bind(now)
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query(
+        "INSERT INTO sys_tags (id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(id)
+    .bind(name)
+    .bind(tag_color(name))
+    .bind(now)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
     Ok(id)
 }
 
@@ -343,15 +347,13 @@ async fn ensure_project(tx: &mut SqliteConnection, name: &str, now: i64) -> Resu
     }
 
     let id = id::next_id()?;
-    sqlx::query(
-        "INSERT INTO sys_projects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
-    )
-    .bind(id)
-    .bind(name)
-    .bind(now)
-    .bind(now)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("INSERT INTO sys_projects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)")
+        .bind(id)
+        .bind(name)
+        .bind(now)
+        .bind(now)
+        .execute(&mut *tx)
+        .await?;
     Ok(id)
 }
 
@@ -409,7 +411,9 @@ pub async fn list_muse_notes(
              AND n.created_at >= (CAST(strftime('%s','now','start of day') AS INTEGER) * 1000)",
         ),
         "unsorted" => {
-            sql.push_str(" AND n.archived_at IS NULL AND n.tags_text = '' AND n.project_id IS NULL");
+            sql.push_str(
+                " AND n.archived_at IS NULL AND n.tags_text = '' AND n.project_id IS NULL",
+            );
         }
         "tag" => {
             let name = filter
@@ -448,7 +452,12 @@ pub async fn list_muse_notes(
         binds.push(Bind::Text(status.to_string()));
     }
 
-    if let Some(keyword) = filter.keyword.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(keyword) = filter
+        .keyword
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         match fts_query(keyword) {
             Some(q) => {
                 sql.push_str(
@@ -691,7 +700,9 @@ pub async fn update_muse_note_project(
     project: Option<String>,
 ) -> Result<NoteDto, AppError> {
     let note_id = id::parse_id(&id)?;
-    let name = project.map(|p| p.trim().to_string()).filter(|p| !p.is_empty());
+    let name = project
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty());
 
     let now = now_ms();
     let mut tx: Transaction<'_, Sqlite> = db.pool.begin().await?;
@@ -728,11 +739,10 @@ pub async fn add_muse_tag_to_note(
         return Err(AppError::Invalid("tag name required".into()));
     }
 
-    let existing: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM muse_note_tags WHERE note_id = ?")
-            .bind(nid)
-            .fetch_one(&db.pool)
-            .await?;
+    let existing: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM muse_note_tags WHERE note_id = ?")
+        .bind(nid)
+        .fetch_one(&db.pool)
+        .await?;
     if existing >= MAX_TAGS_PER_NOTE as i64 {
         return Err(AppError::Invalid(format!(
             "a note can hold at most {MAX_TAGS_PER_NOTE} tags"
@@ -803,7 +813,10 @@ pub async fn archive_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<N
 }
 
 #[tauri::command]
-pub async fn unarchive_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<NoteDto, AppError> {
+pub async fn unarchive_muse_note(
+    db: tauri::State<'_, Db>,
+    id: String,
+) -> Result<NoteDto, AppError> {
     let note_id = id::parse_id(&id)?;
     let mut conn = db.pool.acquire().await?;
     let res = sqlx::query("UPDATE muse_notes SET archived_at = NULL, updated_at = ? WHERE id = ?")
@@ -846,7 +859,9 @@ fn validate_project_status(status: &str) -> Result<(), AppError> {
     if VALID_PROJECT_STATUSES.contains(&status) {
         Ok(())
     } else {
-        Err(AppError::Invalid(format!("unknown project status: {status}")))
+        Err(AppError::Invalid(format!(
+            "unknown project status: {status}"
+        )))
     }
 }
 
@@ -864,17 +879,18 @@ fn file_mtime_ms(path: &Path) -> i64 {
 }
 
 async fn fetch_tag(db: &Db, tag_id: i64) -> Result<MuseTagDto, AppError> {
-    let row: TagStatRow = sqlx::query_as(
-        "SELECT id, name, color, note_count FROM v_muse_tag_stats WHERE id = ?",
-    )
-    .bind(tag_id)
-    .fetch_optional(&db.pool)
-    .await?
-    .ok_or_else(|| AppError::NotFound(format!("tag {tag_id}")))?;
+    let row: TagStatRow =
+        sqlx::query_as("SELECT id, name, color, note_count FROM v_muse_tag_stats WHERE id = ?")
+            .bind(tag_id)
+            .fetch_optional(&db.pool)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("tag {tag_id}")))?;
 
     Ok(MuseTagDto {
         id: id::id_to_string(row.id),
-        color: row.color.unwrap_or_else(|| tag_color(&row.name).to_string()),
+        color: row
+            .color
+            .unwrap_or_else(|| tag_color(&row.name).to_string()),
         name: row.name,
         note_count: row.note_count,
     })
@@ -1010,13 +1026,12 @@ pub async fn rename_muse_tag(
         return Err(AppError::Invalid("tag name required".into()));
     }
 
-    let conflict: Option<i64> = sqlx::query_scalar(
-        "SELECT id FROM sys_tags WHERE name = ? AND id != ?",
-    )
-    .bind(&name)
-    .bind(tag_id)
-    .fetch_optional(&db.pool)
-    .await?;
+    let conflict: Option<i64> =
+        sqlx::query_scalar("SELECT id FROM sys_tags WHERE name = ? AND id != ?")
+            .bind(&name)
+            .bind(tag_id)
+            .fetch_optional(&db.pool)
+            .await?;
     if conflict.is_some() {
         return Err(AppError::Invalid(format!("tag already exists: {name}")));
     }
@@ -1086,11 +1101,10 @@ pub async fn merge_muse_tags(
 
     let mut tx = db.pool.begin().await?;
 
-    let from_exists: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM sys_tags WHERE id = ?")
-            .bind(from)
-            .fetch_optional(&mut *tx)
-            .await?;
+    let from_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM sys_tags WHERE id = ?")
+        .bind(from)
+        .fetch_optional(&mut *tx)
+        .await?;
     let to_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM sys_tags WHERE id = ?")
         .bind(to)
         .fetch_optional(&mut *tx)
@@ -1421,7 +1435,9 @@ pub async fn restore_muse_db(app: tauri::AppHandle, path: String) -> Result<(), 
     .await?;
     conn.close().await;
     if ok == 0 {
-        return Err(AppError::Invalid("backup is not a valid Muse database".into()));
+        return Err(AppError::Invalid(
+            "backup is not a valid Muse database".into(),
+        ));
     }
 
     let app_data = app.path().app_data_dir()?;
@@ -1435,14 +1451,81 @@ pub async fn restore_muse_db(app: tauri::AppHandle, path: String) -> Result<(), 
 
 #[tauri::command]
 pub fn restart_app(app: tauri::AppHandle) {
-    app.restart();
+    // `app.restart()` 会立刻拉起新进程。单实例插件看到旧进程还在，会把新进程退出，结果只剩关闭。
+    schedule_relaunch();
+    app.exit(0);
+}
+
+fn schedule_relaunch() {
+    let Ok(exe) = std::env::current_exe() else {
+        return;
+    };
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x0100_0000;
+        let command = windows_relaunch_command(&exe, &args);
+        let flags = CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB;
+        if std::process::Command::new("cmd")
+            .args(["/C", &command])
+            .creation_flags(flags)
+            .spawn()
+            .is_err()
+        {
+            let _ = std::process::Command::new("cmd")
+                .args(["/C", &command])
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn();
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut script = String::from("sleep 2; ");
+        push_quoted(&mut script, &exe.display().to_string());
+        for arg in &args {
+            script.push(' ');
+            push_quoted(&mut script, arg);
+        }
+        let _ = std::process::Command::new("sh").args(["-c", &script]).spawn();
+    }
+}
+
+fn push_quoted(command: &mut String, value: &str) {
+    command.push('"');
+    command.push_str(&value.replace('"', ""));
+    command.push('"');
+}
+
+#[cfg(target_os = "windows")]
+fn windows_relaunch_command(exe: &std::path::Path, args: &[String]) -> String {
+    let mut command = String::from("ping -n 4 127.0.0.1 >nul & ");
+    if cfg!(debug_assertions) {
+        let _ = (exe, args);
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        command.push_str("cd /d ");
+        push_quoted(&mut command, &root.display().to_string());
+        command.push_str(" & pnpm tauri dev");
+        return command;
+    }
+
+    command.push_str("start \"\" ");
+    push_quoted(&mut command, &exe.display().to_string());
+    for arg in args {
+        command.push(' ');
+        push_quoted(&mut command, arg);
+    }
+    command
 }
 
 /// 启动维护：自动备份 + 回收站过期清理（异步、不阻塞 UI）
 pub async fn run_muse_startup_maintenance(app: tauri::AppHandle) -> Result<(), AppError> {
-    let db = app.try_state::<Db>().ok_or_else(|| {
-        AppError::Invalid("database not ready".into())
-    })?;
+    let db = app
+        .try_state::<Db>()
+        .ok_or_else(|| AppError::Invalid("database not ready".into()))?;
 
     let app_data = app.path().app_data_dir()?;
     let dir = backup_dir(&app_data);
@@ -1453,11 +1536,12 @@ pub async fn run_muse_startup_maintenance(app: tauri::AppHandle) -> Result<(), A
     prune_auto_backups(&dir, AUTO_BACKUP_KEEP)?;
 
     let cutoff = now_ms().saturating_sub(TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    let purged = sqlx::query("DELETE FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?")
-        .bind(cutoff)
-        .execute(&db.pool)
-        .await?
-        .rows_affected();
+    let purged =
+        sqlx::query("DELETE FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?")
+            .bind(cutoff)
+            .execute(&db.pool)
+            .await?
+            .rows_affected();
     if purged > 0 {
         log::info!("Purged {purged} expired Muse trash notes");
     }

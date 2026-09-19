@@ -1,6 +1,6 @@
 [package]
 name = "shixu"
-version = "0.18.0"
+version = "0.0.1"
 description = "SHIXU — Personal AI Workspace"
 edition = "2024"
 

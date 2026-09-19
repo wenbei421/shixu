@@ -67,7 +67,14 @@
       "language": "语言",
       "languageDesc": "选择界面显示语言。",
       "theme": "主题",
-      "themeDesc": "选择应用程序的主题。"
+      "themeDesc": "选择应用程序的主题。",
+      "reset": "重置系统",
+      "resetDesc": "清空当前环境的灵感、待办、标签、项目和备份，并恢复默认界面设置，然后重新启动。不会重新生成示例数据。",
+      "resetAction": "重置并重启",
+      "resetCancel": "取消",
+      "resetTitle": "重置系统？",
+      "resetConfirm": "此操作不能撤销。灵感、待办和备份都会被清空，应用会重新启动，不会再写入示例数据。",
+      "resetFailed": "重置失败"
     },
     "about": {
       "title": "拾序",

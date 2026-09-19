@@ -17,5 +17,10 @@ export const useSettingsStore = defineStore('settings', () => {
     return await store.entries<any>()
   }
 
-  return { getSetting, setSetting, getSettings }
+  async function clearSettings() {
+    await store.clear()
+    await store.save()
+  }
+
+  return { getSetting, setSetting, getSettings, clearSettings }
 })

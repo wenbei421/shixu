@@ -67,7 +67,14 @@
       "language": "Idioma",
       "languageDesc": "Elige el idioma de la interfaz.",
       "theme": "Tema",
-      "themeDesc": "Elige el tema para la aplicación."
+      "themeDesc": "Elige el tema para la aplicación.",
+      "reset": "Restablecer sistema",
+      "resetDesc": "Vacía notas, tareas, etiquetas, proyectos y copias de esta instalación, restaura los ajustes y reinicia. No vuelve a crear datos de ejemplo.",
+      "resetAction": "Restablecer y reiniciar",
+      "resetCancel": "Cancelar",
+      "resetTitle": "¿Restablecer el sistema?",
+      "resetConfirm": "No se puede deshacer. Se vaciarán las notas, tareas y copias, y la aplicación se reiniciará sin datos de ejemplo.",
+      "resetFailed": "No se pudo restablecer"
     },
     "about": {
       "title": "拾序",

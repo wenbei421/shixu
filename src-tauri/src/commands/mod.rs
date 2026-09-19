@@ -76,3 +76,23 @@ pub async fn reveal_data_dir(app: AppHandle) -> Result<(), AppError> {
 
     Ok(())
 }
+
+/// 清空当前环境的业务数据。不删除库文件，因此不会重新灌入种子数据。
+#[tauri::command]
+pub async fn reset_system(app: AppHandle, db: tauri::State<'_, Db>) -> Result<(), AppError> {
+    crate::sqlite::clear_user_data(&db.pool).await?;
+
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Invalid(format!("resolve app_data_dir: {e}")))?;
+    crate::sqlite::remove_runtime_data(&dir)?;
+
+    if let Ok(config) = app.path().app_config_dir() {
+        let settings = config.join("settings.json");
+        if settings.exists() {
+            std::fs::remove_file(settings)?;
+        }
+    }
+    Ok(())
+}
