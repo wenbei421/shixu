@@ -5,6 +5,7 @@ use tauri::Manager;
 use tauri_plugin_decorum::WebviewWindowExt;
 
 pub mod commands;
+mod deepseek;
 mod error;
 mod id;
 pub mod plugins;
@@ -35,6 +36,7 @@ pub fn run() {
         builder = builder.plugin(logging::tauri_plugin_logging());
     }
     builder
+        .manage(deepseek::DeepseekBridge::new())
         .plugin(tauri_plugin_decorum::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
@@ -85,6 +87,8 @@ pub fn run() {
             commands::delete_todo_task,
             commands::export_todo_json,
             commands::get_todo_counts,
+            commands::open_deepseek_window,
+            commands::execute_deepseek_task,
         ])
         .setup(|app| {
             sqlite::set_db(app).map_err(|e| e.to_string())?;

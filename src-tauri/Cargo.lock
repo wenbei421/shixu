@@ -4317,6 +4317,9 @@ dependencies = [
  "tauri-plugin-store",
  "tauri-plugin-window-state",
  "thiserror 2.0.19",
+ "tokio",
+ "webview2-com",
+ "windows 0.61.3",
 ]
 
 [[package]]

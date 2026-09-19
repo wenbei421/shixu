@@ -1,6 +1,8 @@
+mod deepseek;
 mod muse;
 mod todo;
 
+pub use deepseek::*;
 pub use muse::*;
 pub use todo::*;
 

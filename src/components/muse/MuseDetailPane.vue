@@ -10,7 +10,7 @@ import { NOTE_SOURCES, STATUS_META, STATUS_ORDER } from '@/lib/muse'
 import { relativeTime } from '@/lib/muse-format'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
-import MuseSourceStamp from './MuseSourceStamp.vue'
+import MuseAiCard from './MuseAiCard.vue'
 import MuseStatusBadge from './MuseStatusBadge.vue'
 
 /** 项目下拉里「新建项目」的哨兵值 */
@@ -30,11 +30,6 @@ const confirmPurgeOpen = ref(false)
 
 const note = computed(() => store.selectedNote)
 const isTrash = computed(() => store.isTrashView)
-
-/** AI 卡片的关键词位（原型：无标签时显示「未分类」） */
-const aiKeywords = computed(() =>
-  note.value?.tags.length ? note.value.tags.join(' · ') : t('muse.uncategorized'),
-)
 
 function reportFailure(e: unknown) {
   toast(e instanceof Error ? e.message : String(e))
@@ -265,11 +260,6 @@ async function confirmPurge() {
   }
 }
 
-/** AI 能力尚未接入（FR-10 为 P1），先给出占位反馈 */
-function onAiAction(action: 'outline' | 'relate' | 'task') {
-  toast(t(`muse.ai.pending.${action}`))
-}
-
 defineExpose({
   toggleArchive,
   setStatus,
@@ -472,35 +462,7 @@ defineExpose({
           </option>
         </select>
 
-        <p class="text-muted-foreground flex items-center gap-1.5 text-[10.5px] font-semibold tracking-widest uppercase">
-          <Sparkles class="text-primary size-3" />
-          {{ t('muse.detail.sectionAi') }}
-        </p>
-        <div class="border-primary/20 bg-primary/5 rounded-lg border px-3.5 py-3 text-[12.5px] leading-relaxed">
-          <p>
-            <strong class="text-primary font-semibold">{{ t('muse.ai.keywords') }}</strong>
-            {{ aiKeywords }}
-          </p>
-          <p class="mt-0.5 flex items-center gap-1.5">
-            <strong class="text-primary font-semibold">{{ t('muse.ai.source') }}</strong>
-            <MuseSourceStamp :source="note.source" :timestamp="note.createdAt" />
-          </p>
-          <p class="mt-0.5">
-            <strong class="text-primary font-semibold">{{ t('muse.ai.advice') }}</strong>
-            {{ t(`muse.ai.suggestion.${note.status}`) }}
-          </p>
-          <div class="mt-2.5 flex flex-wrap gap-1.5">
-            <button
-              v-for="action in (['outline', 'relate', 'task'] as const)"
-              :key="action"
-              type="button"
-              class="bg-background border-primary/25 text-primary hover:bg-primary/10 rounded-md border px-2.5 py-1 text-[11px] transition-colors"
-              @click="onAiAction(action)"
-            >
-              {{ t(`muse.ai.action.${action}`) }}
-            </button>
-          </div>
-        </div>
+        <MuseAiCard :note="note" />
 
         <template v-if="store.related.length">
           <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">

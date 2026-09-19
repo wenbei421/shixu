@@ -186,6 +186,29 @@
         "relate": "Find related",
         "task": "Turn into task"
       },
+      "running": "Working…",
+      "waiting": "Sending this to the DeepSeek page.",
+      "close": "Close",
+      "followPlaceholder": "Ask a follow-up",
+      "send": "Send",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Copy failed",
+      "noneRelated": "There are no other notes to compare.",
+      "taskEmpty": "Could not read a task title from the reply.",
+      "fieldTags": "Tags: ",
+      "fieldStatus": "Status: ",
+      "toast": {
+        "outline": "Outline ready",
+        "relate": "Found {count} related notes",
+        "task": "Added todo \"{title}\""
+      },
+      "prompts": {
+        "markdown": "You must answer in Markdown, not plain text. Use headings, lists, and bold.",
+        "outline": "Write an actionable outline for the note below in 3 to 6 points. Do not invent facts that are not in the note.",
+        "relate": "The current note comes first, then other notes (each line: id | summary). Pick at most 3 that are actually related. Reply with a Markdown list, one exact id per item. If none match, write only NONE.",
+        "task": "Turn the note below into one todo. Reply in Markdown with exactly these two lines and nothing else:\n**标题：**\n**说明：**\nKeep the title under 40 characters. Do not invent facts that are not in the note."
+      },
       "pending": {
         "outline": "Outline generation is not wired to AI yet",
         "relate": "Semantic matching is not wired to AI yet",
@@ -363,6 +386,45 @@
       "today": "Today",
       "tomorrow": "Tomorrow",
       "noDue": "No due date"
+    }
+  },
+  "deepseek": {
+    "description": "No API key needed. SHIXU opens the DeepSeek website, fills in your prompt, and brings the reply back. Sign in once in the popup window; the login stays on this machine.",
+    "promptPlaceholder": "What should DeepSeek do?",
+    "attachContext": "Include local todos and ideas",
+    "contextTodos": "Todos",
+    "contextNotes": "Ideas",
+    "open": "Open DeepSeek",
+    "run": "Generate",
+    "running": "Generating…",
+    "statusLabel": "Status: ",
+    "result": "Result",
+    "resultEmpty": "The reply will show up here, including text while it is still generating.",
+    "status": {
+      "idle": "Idle",
+      "opening": "Opening the page",
+      "running": "DeepSeek is replying",
+      "completed": "Done",
+      "error": "Not finished"
+    },
+    "errors": {
+      "generic": "The DeepSeek page task did not finish.",
+      "MISSING_PROMPT": "Write a prompt first.",
+      "PROMPT_TOO_LONG": "The prompt is too long.",
+      "TASK_RUNNING": "A DeepSeek task is already running.",
+      "LOGIN_REQUIRED": "Sign in in the DeepSeek window, then try again.",
+      "INPUT_NOT_FOUND": "Could not find the chat box. Make sure the chat page is open.",
+      "PAGE_NOT_READY": "The DeepSeek page is not ready. Open it and sign in first.",
+      "TIMEOUT": "Timed out waiting for a reply. Check the DeepSeek window to see if it is still generating.",
+      "WINDOW_CLOSED": "The DeepSeek window was closed.",
+      "EMPTY_RESULT": "DeepSeek returned no text.",
+      "SCRIPT_ERROR": "Something went wrong while using the page.",
+      "UNSUPPORTED": "This system cannot read results back from the DeepSeek page yet."
+    },
+    "prompts": {
+      "report": "Using the local records below, write a short daily report. Cover what was done, what is still open, and three things to do next. Do not invent facts that are not in the records.",
+      "insight": "Using the local records below, point out where effort may be going to repeated work, and suggest one change to make now. Do not invent facts that are not in the records.",
+      "plan": "Using the local records below, suggest the three most worthwhile next actions and their order. Do not invent facts that are not in the records."
     }
   }
 }

@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n({ useScope: 'global' })
+import DeepseekTaskPanel from '@/components/ai/DeepseekTaskPanel.vue'
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
-    <h1 class="text-2xl font-bold tracking-tight">
-      {{ t('nav.report') }}
-    </h1>
-    <p class="text-muted-foreground text-sm">
-      {{ t('pages.placeholder', { name: t('nav.report') }) }}
-    </p>
-  </div>
+  <DeepseekTaskPanel
+    title-key="nav.report"
+    prompt-key="deepseek.prompts.report"
+  />
 </template>

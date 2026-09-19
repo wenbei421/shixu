@@ -186,6 +186,29 @@
         "relate": "Buscar relacionadas",
         "task": "Convertir en tarea"
       },
+      "running": "Procesando…",
+      "waiting": "Enviando a la web de DeepSeek.",
+      "close": "Cerrar",
+      "followPlaceholder": "Haz una pregunta de seguimiento",
+      "send": "Enviar",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar",
+      "noneRelated": "No hay otras notas para comparar.",
+      "taskEmpty": "No se pudo leer un título de tarea en la respuesta.",
+      "fieldTags": "Etiquetas: ",
+      "fieldStatus": "Estado: ",
+      "toast": {
+        "outline": "Esquema listo",
+        "relate": "Se encontraron {count} notas relacionadas",
+        "task": "Tarea creada: «{title}»"
+      },
+      "prompts": {
+        "markdown": "Responde obligatoriamente en Markdown, no en texto plano. Usa títulos, listas y negrita.",
+        "outline": "Escribe un esquema accionable de la nota de abajo, de 3 a 6 puntos. No inventes hechos que no estén en la nota.",
+        "relate": "Primero va la nota actual y después otras notas (cada línea: id | resumen). Elige como máximo 3 que estén realmente relacionadas. Responde con una lista Markdown, un id exacto por elemento. Si no hay ninguna, escribe solo NONE.",
+        "task": "Convierte la nota de abajo en una tarea. Responde en Markdown con exactamente estas dos líneas y nada más:\n**标题：**\n**说明：**\nEl título no debe pasar de 40 caracteres. No inventes hechos que no estén en la nota."
+      },
       "pending": {
         "outline": "La generación de esquemas aún no usa IA",
         "relate": "La búsqueda semántica aún no usa IA",
@@ -362,6 +385,45 @@
       "today": "Today",
       "tomorrow": "Tomorrow",
       "noDue": "No due date"
+    }
+  },
+  "deepseek": {
+    "description": "No hace falta una API key. SHIXU abre la web de DeepSeek, escribe el prompt y trae la respuesta. Inicia sesión una vez en la ventana; el acceso queda en este equipo.",
+    "promptPlaceholder": "Qué debe hacer DeepSeek",
+    "attachContext": "Incluir tareas e ideas locales",
+    "contextTodos": "Tareas",
+    "contextNotes": "Ideas",
+    "open": "Abrir DeepSeek",
+    "run": "Generar",
+    "running": "Generando…",
+    "statusLabel": "Estado: ",
+    "result": "Resultado",
+    "resultEmpty": "La respuesta aparecerá aquí, también mientras se está generando.",
+    "status": {
+      "idle": "Sin empezar",
+      "opening": "Abriendo la página",
+      "running": "DeepSeek está respondiendo",
+      "completed": "Listo",
+      "error": "No terminó"
+    },
+    "errors": {
+      "generic": "La tarea en la web de DeepSeek no terminó.",
+      "MISSING_PROMPT": "Escribe un prompt primero.",
+      "PROMPT_TOO_LONG": "El prompt es demasiado largo.",
+      "TASK_RUNNING": "Ya hay una tarea de DeepSeek en curso.",
+      "LOGIN_REQUIRED": "Inicia sesión en la ventana de DeepSeek y vuelve a intentarlo.",
+      "INPUT_NOT_FOUND": "No se encontró el cuadro de chat. Confirma que la página de conversación está abierta.",
+      "PAGE_NOT_READY": "La página de DeepSeek no está lista. Ábrela e inicia sesión primero.",
+      "TIMEOUT": "Se agotó el tiempo de espera. Mira en la ventana si sigue generando.",
+      "WINDOW_CLOSED": "Se cerró la ventana de DeepSeek.",
+      "EMPTY_RESULT": "DeepSeek no devolvió texto.",
+      "SCRIPT_ERROR": "Algo falló al usar la página.",
+      "UNSUPPORTED": "Este sistema todavía no puede leer la respuesta desde la web de DeepSeek."
+    },
+    "prompts": {
+      "report": "Con los registros locales de abajo, escribe un informe diario breve: qué se hizo, qué sigue abierto y tres cosas para hacer después. No inventes hechos que no estén en los registros.",
+      "insight": "Con los registros locales de abajo, señala dónde el esfuerzo puede estar yéndose en trabajo repetido y sugiere un cambio inmediato. No inventes hechos que no estén en los registros.",
+      "plan": "Con los registros locales de abajo, sugiere las tres acciones siguientes más útiles y su orden. No inventes hechos que no estén en los registros."
     }
   }
 }
