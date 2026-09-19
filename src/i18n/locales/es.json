@@ -1,16 +1,20 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "Ya no coincide con este filtro"
   },
   "nav": {
     "home": "Resumen",
-    "inspiration": "Inspiración",
+    "muse": "Muse",
     "timeline": "Línea de tiempo",
     "insight": "Perspectivas",
     "report": "Informe diario",
     "plan": "Plan",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "todo": "Tareas"
   },
   "topbar": {
     "searchPlaceholder": "Buscar fragmentos, tareas, proyectos, apps…",
@@ -27,13 +31,15 @@
     "localOnly": "Solo local"
   },
   "statusbar": {
-    "contextIdle": "Context Engine en espera",
-    "active": "Activo",
-    "focus": "Enfoque",
     "fragments": "{count} fragmentos",
     "sqliteReady": "SQLite listo",
     "sqliteOffline": "SQLite desconectado",
-    "aiIdle": "AI Core desconectado"
+    "sqliteOpenDir": "Abrir carpeta de datos",
+    "sqliteTooltip": "{dbPath}\nPulsa para abrir la carpeta de datos",
+    "version": "v{version}",
+    "versionTooltip": "Versión actual {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "Ruta actual: {path}"
   },
   "pages": {
     "placeholder": "El esqueleto de {name} está listo. El contenido se conectará después."
@@ -47,6 +53,27 @@
   "settings": {
     "label": "Configuraciones",
     "description": "Administra las configuraciones y preferencias de la aplicación aquí.",
+    "nav": {
+      "groupSettings": "Ajustes",
+      "groupData": "Datos",
+      "groupOther": "Otros",
+      "general": "General",
+      "backup": "Datos y copia",
+      "tags": "Etiquetas",
+      "projects": "Proyectos",
+      "about": "Acerca de"
+    },
+    "general": {
+      "language": "Idioma",
+      "languageDesc": "Elige el idioma de la interfaz.",
+      "theme": "Tema",
+      "themeDesc": "Elige el tema para la aplicación."
+    },
+    "about": {
+      "title": "拾序",
+      "version": "Versión {version}",
+      "copyright": "© 拾序. Todos los derechos reservados."
+    },
     "theme": {
       "label": "Tema",
       "description": "Elige el tema para la aplicación.",
@@ -55,32 +82,286 @@
       "system": "Sistema"
     }
   },
-  "inspiration": {
-    "categories": "Categorías",
-    "all": "Todas",
-    "addCategory": "Añadir categoría",
-    "newCategory": "Nombre de categoría",
-    "deleteCategory": "Eliminar categoría",
-    "confirmDeleteCategory": "Las ideas de esta categoría pasarán a Sin categoría. ¿Continuar?",
-    "tags": "Etiquetas",
-    "manageTags": "Gestionar etiquetas",
-    "newTag": "Escribe una etiqueta y Enter",
-    "confirmDeleteTag": "Eliminar solo desvincula la etiqueta. ¿Continuar?",
-    "deleteTag": "Eliminar etiqueta",
-    "searchPlaceholder": "Buscar título o contenido…",
-    "create": "Nueva inspiración",
-    "edit": "Editar inspiración",
-    "detail": "Detalle",
-    "back": "Volver a la lista",
-    "title": "Título",
-    "titlePlaceholder": "Opcional; por defecto la primera línea",
-    "category": "Categoría",
-    "content": "Contenido",
-    "save": "Guardar",
-    "cancel": "Cancelar",
-    "delete": "Eliminar",
-    "confirmDelete": "¿Eliminar esta inspiración?",
-    "loading": "Cargando…",
-    "empty": "Aún no hay inspiraciones. Crea una para empezar."
+  "muse": {
+    "uncategorized": "Sin categoría",
+    "capture": {
+      "button": "Capturar idea",
+      "mode": "Captura rápida",
+      "hint": "Se guarda directo en la bandeja",
+      "placeholder": "Anota esta idea…   admite {'#'}etiqueta y {'@'}proyecto",
+      "suggest": "Etiquetas sugeridas",
+      "save": "Guardar",
+      "close": "Cerrar",
+      "insertTag": "Insertar etiqueta",
+      "insertProject": "Insertar proyecto",
+      "pasteClipboard": "Pegar portapapeles",
+      "clipboardEmpty": "El portapapeles está vacío",
+      "clipboardDenied": "No se pudo leer el portapapeles",
+      "source": "Origen",
+      "saved": "Idea guardada en la bandeja"
+    },
+    "nav": {
+      "inbox": "Bandeja",
+      "today": "Hoy",
+      "all": "Todas las ideas",
+      "unsorted": "Por ordenar",
+      "review": "Repaso",
+      "archive": "Archivo",
+      "trash": "Papelera",
+      "tagsGroup": "Etiquetas",
+      "projectsGroup": "Proyectos",
+      "noTags": "Aún sin etiquetas",
+      "noProjects": "Aún sin proyectos",
+      "moreTags": "Ver {count} etiquetas más"
+    },
+    "status": {
+      "new": "Nueva",
+      "check": "Por verificar",
+      "doing": "En curso",
+      "done": "Publicada"
+    },
+    "statusFilter": {
+      "all": "Todas"
+    },
+    "source": {
+      "quick": "Captura rápida",
+      "manual": "Nota manual",
+      "clip": "Recorte web",
+      "book": "Nota de lectura",
+      "pod": "Pódcast",
+      "web": "Web",
+      "api": "API",
+      "import": "Importación"
+    },
+    "list": {
+      "count": "{count} ideas",
+      "searchPlaceholder": "Buscar ideas, etiquetas, proyectos…",
+      "reshuffle": "Volver a mezclar",
+      "reviewTitle": "Repaso aleatorio",
+      "loading": "Cargando…",
+      "empty": "Aquí todavía no hay nada",
+      "emptySearch": "Ninguna idea coincide",
+      "emptyHint": "Pulsa {shortcut} para capturar tu primera idea",
+      "view": {
+        "card": "Tarjetas",
+        "board": "Tablero",
+        "timeline": "Línea de tiempo"
+      }
+    },
+    "detail": {
+      "empty": "Elige una idea de la izquierda para ver su detalle",
+      "createdAt": "Creada {time}",
+      "contentLabel": "Contenido de la idea",
+      "sectionStatus": "Estado",
+      "sectionTags": "Etiquetas",
+      "sectionProject": "Proyecto",
+      "sectionSource": "Origen",
+      "sectionAi": "Análisis IA",
+      "sectionRelated": "Relacionadas · {count}",
+      "addTag": "+ Añadir",
+      "removeTag": "Quitar etiqueta",
+      "tagPlaceholder": "Nombre de etiqueta",
+      "noProject": "— Sin proyecto —",
+      "newProject": "+ Nuevo proyecto…",
+      "projectPlaceholder": "Nombre del proyecto, pulsa Enter",
+      "markDone": "Marcar como publicada",
+      "archive": "Archivar",
+      "unarchive": "Desarchivar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "confirmDelete": "¿Eliminar esta idea? Podrás restaurarla desde la papelera."
+    },
+    "ai": {
+      "keywords": "Palabras clave:",
+      "source": "Origen:",
+      "advice": "Sugerencia:",
+      "suggestion": {
+        "new": "Aún sin verificar: añade un escenario concreto o un contraejemplo.",
+        "check": "Busca un caso real para probarla, o resúmela en 200 palabras.",
+        "doing": "En marcha: divídela en 2–3 pasos accionables.",
+        "done": "Ya publicada. Archívala o reutilízala como referencia."
+      },
+      "action": {
+        "outline": "Generar esquema",
+        "relate": "Buscar relacionadas",
+        "task": "Convertir en tarea"
+      },
+      "pending": {
+        "outline": "La generación de esquemas aún no usa IA",
+        "relate": "La búsqueda semántica aún no usa IA",
+        "task": "La conversión en tarea aún no usa IA"
+      }
+    },
+    "toast": {
+      "welcome": "Pulsa {shortcut} para capturar en cualquier momento",
+      "saved": "Guardado",
+      "statusChanged": "Cambiado a «{status}»",
+      "movedTo": "Movido a «{status}»",
+      "tagAdded": "Etiqueta {'#'}{tag} añadida",
+      "projectSet": "Añadida al proyecto «{project}»",
+      "projectCleared": "Quitada del proyecto",
+      "markedDone": "Marcada como publicada",
+      "archived": "Archivada",
+      "unarchived": "Desarchivada",
+      "deleted": "Eliminada",
+      "sourceChanged": "Origen cambiado a «{source}»"
+    },
+    "manage": {
+      "open": "Gestionar y datos",
+      "title": "Gestión de datos",
+      "close": "Cerrar",
+      "save": "Guardar",
+      "delete": "Eliminar",
+      "more": "Más acciones",
+      "tabs": {
+        "tags": "Etiquetas",
+        "projects": "Proyectos",
+        "trash": "Papelera",
+        "backup": "Copia"
+      },
+      "tags": {
+        "hint": "Haz clic en el nombre para renombrar; fusionar o recolorear. Borrar una etiqueta no borra los elementos vinculados.",
+        "rename": "Renombrar",
+        "renameHint": "Clic para renombrar, pierde el foco para guardar",
+        "merge": "Fusionar",
+        "mergeInto": "Fusionar en",
+        "pickTarget": "Elegir etiqueta destino",
+        "pickColor": "Haz clic en el punto para abrir la paleta",
+        "confirmMerge": "Confirmar fusión",
+        "deleteTitle": "Eliminar etiqueta",
+        "confirmDelete": "¿Eliminar esta etiqueta? Los elementos se conservan; solo se quita el vínculo."
+      },
+      "projects": {
+        "hint": "Haz clic en el nombre para renombrar; ajusta estado y color. No se puede borrar si hay elementos vinculados.",
+        "newPlaceholder": "Nombre del proyecto",
+        "create": "Crear",
+        "stats": "{notes} elementos · {done} hechos",
+        "deleteBlocked": "Aún tiene elementos vinculados",
+        "deleteTitle": "Eliminar proyecto",
+        "confirmDelete": "¿Eliminar este proyecto? No se puede deshacer.",
+        "statusLabel": "Estado del proyecto",
+        "status": {
+          "active": "Activo",
+          "paused": "Pausado",
+          "done": "Hecho",
+          "archived": "Archivado"
+        }
+      },
+      "trash": {
+        "hint": "Los elementos eliminados se conservan 30 días. Restaura o bórralos para siempre.",
+        "empty": "Vaciar papelera",
+        "emptyState": "La papelera está vacía",
+        "deletedAt": "Eliminada {time}",
+        "daysLeft": "{days} días restantes",
+        "restore": "Restaurar",
+        "purge": "Borrar para siempre",
+        "confirmEmpty": "¿Vaciar la papelera? Todo se eliminará permanentemente.",
+        "confirmPurge": "¿Borrar este elemento para siempre? No se puede deshacer."
+      },
+      "backup": {
+        "hint": "Guarda una copia local completa de los datos de la app. Podrás restaurarla más tarde.",
+        "manual": "Respaldar ahora",
+        "restoreFile": "Restaurar desde archivo…",
+        "autoHint": "Cada arranque hace una copia automática; se conservan las 7 últimas.",
+        "empty": "Aún no hay copias",
+        "restore": "Restaurar",
+        "restoreAndRestart": "Restaurar y reiniciar",
+        "confirmRestore": "La restauración sobrescribirá la base actual y reiniciará la app. Asegúrate de tener una copia."
+      },
+      "toast": {
+        "tagRenamed": "Etiqueta renombrada",
+        "tagMerged": "Etiquetas fusionadas",
+        "tagDeleted": "Etiqueta eliminada",
+        "projectCreated": "Proyecto creado",
+        "projectRenamed": "Proyecto renombrado",
+        "projectUpdated": "Proyecto actualizado",
+        "projectDeleted": "Proyecto eliminado",
+        "restored": "Restaurada desde la papelera",
+        "purged": "Eliminada permanentemente",
+        "emptied": "Se eliminaron {count} elementos",
+        "backedUp": "Copia guardada en {path}",
+        "restoreQueued": "Restauración lista, reiniciando…"
+      }
+    }
+  },
+  "todo": {
+    "title": "Todo",
+    "count": "{count} tareas",
+    "createdAt": "Creado {time}",
+    "emptyHint": "Pulsa {shortcut} para anotar tu primera tarea",
+    "add": "Add",
+    "createPlaceholder": "Write a task and press Enter",
+    "loading": "Loading…",
+    "empty": "No tasks",
+    "selectHint": "Select a task to view details",
+    "noDescription": "No description",
+    "delete": "Delete",
+    "nav": {
+      "inbox": "Inbox",
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "all": "All",
+      "done": "Done"
+    },
+    "fields": {
+      "status": "Status",
+      "priority": "Priority",
+      "project": "Project",
+      "title": "Title",
+      "description": "Description",
+      "due": "Due date",
+      "tags": "Tags",
+      "subtasks": "Subtasks"
+    },
+    "dueQuick": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "dayAfter": "Pasado mañana",
+      "nextWeek": "Próxima semana",
+      "clear": "Borrar"
+    },
+    "searchPlaceholder": "Search title or description…",
+    "noProject": "No project",
+    "addTag": "+ Añadir",
+    "removeTag": "Quitar etiqueta",
+    "tagPlaceholder": "Nombre de etiqueta",
+    "status": {
+      "todo": "Todo",
+      "doing": "Doing",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "none": "None",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "subtaskPlaceholder": "Add a subtask and press Enter",
+    "priorityFilter": {
+      "all": "All priorities"
+    },
+    "view": {
+      "card": "List",
+      "board": "Board",
+      "timeline": "Timeline"
+    },
+    "export": "Export JSON",
+    "capture": {
+      "title": "Quick add",
+      "button": "Recolectar tarea",
+      "hint": "Enter to save · Esc to close",
+      "placeholder": "Tomorrow 18:00 ship report {'#'}work {'@'}project !high",
+      "insertTag": "Insert tag",
+      "insertProject": "Insert project",
+      "close": "Close",
+      "save": "Save"
+    },
+    "timeline": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "noDue": "No due date"
+    }
   }
 }

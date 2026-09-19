@@ -1,7 +1,7 @@
 use sqlx::migrate::MigrateError;
 use thiserror::Error;
 
-/// 拾序 OS 应用错误
+/// 拾序应用错误
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("Tauri error: {0}")]

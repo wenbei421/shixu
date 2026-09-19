@@ -1,11 +1,15 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "已不符合当前筛选"
   },
   "nav": {
     "home": "今日总览",
-    "inspiration": "灵感",
+    "todo": "待办",
+    "muse": "灵感库",
     "timeline": "时间线",
     "insight": "洞察",
     "report": "日报",
@@ -27,13 +31,15 @@
     "localOnly": "全本地"
   },
   "statusbar": {
-    "contextIdle": "Context Engine 待命",
-    "active": "活跃",
-    "focus": "专注",
     "fragments": "{count} 片段",
     "sqliteReady": "SQLite 就绪",
     "sqliteOffline": "SQLite 未连接",
-    "aiIdle": "AI Core 未连接"
+    "sqliteOpenDir": "打开数据目录",
+    "sqliteTooltip": "{dbPath}\n点击打开数据目录",
+    "version": "v{version}",
+    "versionTooltip": "当前版本 {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "当前路由：{path}"
   },
   "pages": {
     "placeholder": "{name}模块骨架已就绪，业务内容稍后接入。"
@@ -47,6 +53,27 @@
   "settings": {
     "label": "设置",
     "description": "在此管理应用程序的设置和偏好。",
+    "nav": {
+      "groupSettings": "设置",
+      "groupData": "数据",
+      "groupOther": "其他",
+      "general": "通用",
+      "backup": "数据与备份",
+      "tags": "标签",
+      "projects": "项目",
+      "about": "关于"
+    },
+    "general": {
+      "language": "语言",
+      "languageDesc": "选择界面显示语言。",
+      "theme": "主题",
+      "themeDesc": "选择应用程序的主题。"
+    },
+    "about": {
+      "title": "拾序",
+      "version": "版本 {version}",
+      "copyright": "© 拾序. All rights reserved."
+    },
     "theme": {
       "label": "主题",
       "description": "选择应用程序的主题。",
@@ -55,32 +82,287 @@
       "system": "系统"
     }
   },
-  "inspiration": {
-    "categories": "分类",
-    "all": "全部",
-    "addCategory": "添加分类",
-    "newCategory": "新分类名称",
-    "deleteCategory": "删除分类",
-    "confirmDeleteCategory": "删除后该类灵感将归入「未分类」，确定？",
-    "tags": "标签",
-    "manageTags": "管理标签",
-    "newTag": "输入标签并回车",
-    "confirmDeleteTag": "删除标签只会解除关联，确定？",
-    "deleteTag": "删除标签",
-    "searchPlaceholder": "搜索标题或正文…",
-    "create": "新建灵感",
-    "edit": "编辑灵感",
-    "detail": "灵感详情",
-    "back": "返回列表",
-    "title": "标题",
-    "titlePlaceholder": "可选，默认取正文首行",
-    "category": "分类",
-    "content": "正文",
-    "save": "保存",
-    "cancel": "取消",
-    "delete": "删除",
-    "confirmDelete": "确定删除这条灵感？",
+  "muse": {
+    "uncategorized": "未分类",
+    "capture": {
+      "button": "捕捉灵感",
+      "mode": "快速捕捉",
+      "hint": "内容会自动进入「收件箱」",
+      "placeholder": "记下此刻的想法…   支持 {'#'}标签  {'@'}项目",
+      "suggest": "建议标签",
+      "save": "保存",
+      "close": "关闭",
+      "insertTag": "插入标签",
+      "insertProject": "插入项目",
+      "pasteClipboard": "粘贴剪贴板",
+      "clipboardEmpty": "剪贴板是空的",
+      "clipboardDenied": "无法读取剪贴板",
+      "source": "来源",
+      "saved": "灵感已保存到收件箱"
+    },
+    "nav": {
+      "inbox": "收件箱",
+      "today": "今日",
+      "all": "全部灵感",
+      "unsorted": "待整理",
+      "review": "回顾",
+      "archive": "归档",
+      "trash": "回收站",
+      "tagsGroup": "标签",
+      "projectsGroup": "项目",
+      "noTags": "暂无标签",
+      "noProjects": "暂无项目",
+      "moreTags": "展开其余 {count} 个标签"
+    },
+    "status": {
+      "new": "新想法",
+      "check": "待验证",
+      "doing": "进行中",
+      "done": "已输出"
+    },
+    "statusFilter": {
+      "all": "全部"
+    },
+    "source": {
+      "quick": "快速捕捉",
+      "manual": "手动记录",
+      "clip": "网页剪藏",
+      "book": "读书笔记",
+      "pod": "播客",
+      "web": "网页",
+      "api": "接口写入",
+      "import": "导入"
+    },
+    "list": {
+      "count": "{count} 条",
+      "searchPlaceholder": "搜索灵感、标签、项目…",
+      "reshuffle": "重新洗牌",
+      "reviewTitle": "随机回顾",
+      "loading": "加载中…",
+      "empty": "这里还是空的",
+      "emptySearch": "没有匹配的灵感",
+      "emptyHint": "按 {shortcut} 记下第一个灵感",
+      "view": {
+        "card": "卡片流",
+        "board": "看板",
+        "timeline": "时间线"
+      }
+    },
+    "detail": {
+      "empty": "选择左侧的一条灵感查看详情",
+      "createdAt": "{time}创建",
+      "contentLabel": "灵感正文",
+      "sectionStatus": "状态",
+      "sectionTags": "标签",
+      "sectionProject": "项目",
+      "sectionSource": "来源",
+      "sectionAi": "AI 分析",
+      "sectionRelated": "关联灵感 · {count}",
+      "addTag": "+ 添加",
+      "removeTag": "移除标签",
+      "tagPlaceholder": "标签名",
+      "noProject": "— 无项目 —",
+      "newProject": "+ 新建项目…",
+      "projectPlaceholder": "新项目名称，回车确认",
+      "markDone": "标记已整理",
+      "archive": "归档",
+      "unarchive": "取消归档",
+      "delete": "删除",
+      "cancel": "取消",
+      "confirmDelete": "确定删除这条灵感？删除后可在回收站恢复。"
+    },
+    "ai": {
+      "keywords": "关键词：",
+      "source": "来源：",
+      "advice": "建议：",
+      "suggestion": {
+        "new": "这条灵感还没验证，建议先补充一个具体场景或反例。",
+        "check": "可以找一个真实案例来验证它，或者写成一段 200 字的说明。",
+        "doing": "正在推进中，建议拆成 2–3 个可执行的小步骤。",
+        "done": "已经输出，可以归档或作为其他灵感的参考素材。"
+      },
+      "action": {
+        "outline": "生成大纲",
+        "relate": "找关联灵感",
+        "task": "转为任务"
+      },
+      "pending": {
+        "outline": "大纲生成尚未接入 AI",
+        "relate": "语义关联尚未接入 AI",
+        "task": "转任务尚未接入 AI"
+      }
+    },
+    "toast": {
+      "welcome": "按 {shortcut} 随时捕捉灵感",
+      "saved": "已保存",
+      "statusChanged": "已切换到「{status}」",
+      "movedTo": "已移动到「{status}」",
+      "tagAdded": "已添加标签 {'#'}{tag}",
+      "projectSet": "已加入项目「{project}」",
+      "projectCleared": "已移出项目",
+      "markedDone": "已标记为「已输出」",
+      "archived": "已归档",
+      "unarchived": "已取消归档",
+      "deleted": "已删除",
+      "sourceChanged": "来源已改为「{source}」"
+    },
+    "manage": {
+      "open": "管理与数据",
+      "title": "数据管理",
+      "close": "关闭",
+      "save": "保存",
+      "delete": "删除",
+      "more": "更多操作",
+      "tabs": {
+        "tags": "标签",
+        "projects": "项目",
+        "trash": "回收站",
+        "backup": "备份"
+      },
+      "tags": {
+        "hint": "单击名称改名；可合并、着色。删除标签不会删除关联内容。",
+        "rename": "改名",
+        "renameHint": "单击改名，失焦保存",
+        "merge": "合并",
+        "mergeInto": "合并到",
+        "pickTarget": "选择目标标签",
+        "pickColor": "点击色点弹出调色板",
+        "confirmMerge": "确认合并",
+        "deleteTitle": "删除标签",
+        "confirmDelete": "确定删除该标签？关联内容会解除绑定，但正文保留。"
+      },
+      "projects": {
+        "hint": "单击名称可改名；可调整状态与颜色。仍有关联内容时不能删除。",
+        "newPlaceholder": "新项目名称",
+        "create": "新建",
+        "stats": "{notes} 条 · {done} 已完成",
+        "deleteBlocked": "仍有关联内容，无法删除",
+        "deleteTitle": "删除项目",
+        "confirmDelete": "确定删除该项目？此操作不可恢复。",
+        "statusLabel": "项目状态",
+        "status": {
+          "active": "进行中",
+          "paused": "暂停",
+          "done": "已完成",
+          "archived": "已归档"
+        }
+      },
+      "trash": {
+        "hint": "已删除内容保留 30 天，可恢复或彻底清空。",
+        "empty": "清空回收站",
+        "emptyState": "回收站是空的",
+        "deletedAt": "{time} 删除",
+        "daysLeft": "剩余 {days} 天",
+        "restore": "恢复",
+        "purge": "彻底删除",
+        "confirmEmpty": "确定清空回收站？所有条目将被永久删除。",
+        "confirmPurge": "确定彻底删除这条内容？此操作不可恢复。"
+      },
+      "backup": {
+        "hint": "把应用数据完整备份到本地文件，之后可随时从备份恢复。",
+        "manual": "立即备份",
+        "restoreFile": "从文件恢复…",
+        "autoHint": "每次启动会自动备份，并保留最近 7 份。",
+        "empty": "还没有备份文件",
+        "restore": "恢复",
+        "restoreAndRestart": "恢复并重启",
+        "confirmRestore": "恢复将覆盖当前数据库，应用会重启。请确认已备份重要数据。"
+      },
+      "toast": {
+        "tagRenamed": "标签已改名",
+        "tagMerged": "标签已合并",
+        "tagDeleted": "标签已删除",
+        "projectCreated": "项目已创建",
+        "projectRenamed": "项目已改名",
+        "projectUpdated": "项目已更新",
+        "projectDeleted": "项目已删除",
+        "restored": "已从回收站恢复",
+        "purged": "已彻底删除",
+        "emptied": "已清空 {count} 条",
+        "backedUp": "已备份到 {path}",
+        "restoreQueued": "恢复已就绪，正在重启…"
+      }
+    }
+  },
+  "todo": {
+    "title": "待办",
+    "count": "{count} 条",
+    "createdAt": "{time}创建",
+    "emptyHint": "按 {shortcut} 记下第一件待办",
+    "add": "添加",
+    "createPlaceholder": "写下要做的事，回车添加",
     "loading": "加载中…",
-    "empty": "还没有灵感，点右上角新建一条吧"
+    "empty": "暂无待办",
+    "selectHint": "选择一条待办查看详情",
+    "noDescription": "暂无描述",
+    "delete": "删除",
+    "nav": {
+      "inbox": "收集箱",
+      "today": "今天",
+      "upcoming": "即将到来",
+      "all": "全部",
+      "done": "已完成"
+    },
+    "fields": {
+      "status": "状态",
+      "priority": "优先级",
+      "project": "项目",
+      "title": "标题",
+      "description": "描述",
+      "due": "截止日期",
+      "tags": "标签",
+      "subtasks": "子待办"
+    },
+    "dueQuick": {
+      "today": "今天",
+      "tomorrow": "明天",
+      "dayAfter": "后天",
+      "nextWeek": "下周",
+      "clear": "清除"
+    },
+    "searchPlaceholder": "搜索标题或描述…",
+    "noProject": "无项目",
+    "addTag": "+ 添加",
+    "removeTag": "移除标签",
+    "tagPlaceholder": "标签名",
+    "status": {
+      "todo": "待办",
+      "doing": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    },
+    "priority": {
+      "none": "无",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "subtaskPlaceholder": "添加子待办，回车确认",
+    "priorityFilter": {
+      "group": "优先级",
+      "all": "全部"
+    },
+    "view": {
+      "card": "列表",
+      "board": "看板",
+      "timeline": "时间线"
+    },
+    "export": "导出 JSON",
+    "capture": {
+      "title": "快速添加",
+      "button": "收集待办",
+      "hint": "回车保存 · Esc 关闭",
+      "placeholder": "明天 18:00 提交周报 {hash}工作 {at}项目 ！高",
+      "insertTag": "插入标签",
+      "insertProject": "插入项目",
+      "close": "关闭",
+      "save": "保存"
+    },
+    "timeline": {
+      "overdue": "逾期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "noDue": "无日期"
+    }
   }
 }

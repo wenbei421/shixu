@@ -1,16 +1,20 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "No longer matches this filter"
   },
   "nav": {
     "home": "Overview",
-    "inspiration": "Inspiration",
+    "muse": "Muse",
     "timeline": "Timeline",
     "insight": "Insight",
     "report": "Daily Report",
     "plan": "Plan",
-    "settings": "Settings"
+    "settings": "Settings",
+    "todo": "Todo"
   },
   "topbar": {
     "searchPlaceholder": "Search fragments, tasks, projects, apps…",
@@ -27,13 +31,15 @@
     "localOnly": "On-device only"
   },
   "statusbar": {
-    "contextIdle": "Context Engine idle",
-    "active": "Active",
-    "focus": "Focus",
     "fragments": "{count} fragments",
     "sqliteReady": "SQLite ready",
     "sqliteOffline": "SQLite offline",
-    "aiIdle": "AI Core offline"
+    "sqliteOpenDir": "Open data folder",
+    "sqliteTooltip": "{dbPath}\nClick to open the data folder",
+    "version": "v{version}",
+    "versionTooltip": "Current version {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "Current route: {path}"
   },
   "pages": {
     "placeholder": "{name} shell is ready. Content will be wired next."
@@ -47,6 +53,27 @@
   "settings": {
     "label": "Settings",
     "description": "Manage the app settings and preferences here.",
+    "nav": {
+      "groupSettings": "Settings",
+      "groupData": "Data",
+      "groupOther": "Other",
+      "general": "General",
+      "backup": "Data & backup",
+      "tags": "Tags",
+      "projects": "Projects",
+      "about": "About"
+    },
+    "general": {
+      "language": "Language",
+      "languageDesc": "Choose the display language.",
+      "theme": "Theme",
+      "themeDesc": "Choose the theme for the app."
+    },
+    "about": {
+      "title": "拾序",
+      "version": "Version {version}",
+      "copyright": "© 拾序. All rights reserved."
+    },
     "theme": {
       "label": "Theme",
       "description": "Choose the theme for the app.",
@@ -55,32 +82,287 @@
       "system": "System"
     }
   },
-  "inspiration": {
-    "categories": "Categories",
-    "all": "All",
-    "addCategory": "Add category",
-    "newCategory": "New category name",
-    "deleteCategory": "Delete category",
-    "confirmDeleteCategory": "Items in this category will move to Uncategorized. Continue?",
-    "tags": "Tags",
-    "manageTags": "Manage tags",
-    "newTag": "Type a tag and press Enter",
-    "confirmDeleteTag": "Deleting a tag only unlinks it. Continue?",
-    "deleteTag": "Delete tag",
-    "searchPlaceholder": "Search title or body…",
-    "create": "New inspiration",
-    "edit": "Edit inspiration",
-    "detail": "Inspiration detail",
-    "back": "Back to list",
-    "title": "Title",
-    "titlePlaceholder": "Optional; defaults to first line",
-    "category": "Category",
-    "content": "Content",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "confirmDelete": "Delete this inspiration?",
+  "muse": {
+    "uncategorized": "Uncategorized",
+    "capture": {
+      "button": "Capture idea",
+      "mode": "Quick capture",
+      "hint": "Saved straight to your Inbox",
+      "placeholder": "Jot down this thought…   {'#'}tag and {'@'}project supported",
+      "suggest": "Suggested tags",
+      "save": "Save",
+      "close": "Close",
+      "insertTag": "Insert tag",
+      "insertProject": "Insert project",
+      "pasteClipboard": "Paste clipboard",
+      "clipboardEmpty": "Clipboard is empty",
+      "clipboardDenied": "Could not read clipboard",
+      "source": "Source",
+      "saved": "Idea saved to Inbox"
+    },
+    "nav": {
+      "inbox": "Inbox",
+      "today": "Today",
+      "all": "All ideas",
+      "unsorted": "Needs sorting",
+      "review": "Review",
+      "archive": "Archive",
+      "trash": "Trash",
+      "tagsGroup": "Tags",
+      "projectsGroup": "Projects",
+      "noTags": "No tags yet",
+      "noProjects": "No projects yet",
+      "moreTags": "Show {count} more tags"
+    },
+    "status": {
+      "new": "New",
+      "check": "To verify",
+      "doing": "In progress",
+      "done": "Shipped"
+    },
+    "statusFilter": {
+      "all": "All"
+    },
+    "source": {
+      "quick": "Quick capture",
+      "manual": "Manual note",
+      "clip": "Web clip",
+      "book": "Reading note",
+      "pod": "Podcast",
+      "web": "Web",
+      "api": "API",
+      "import": "Import"
+    },
+    "list": {
+      "count": "{count} items",
+      "searchPlaceholder": "Search ideas, tags, projects…",
+      "reshuffle": "Reshuffle",
+      "reviewTitle": "Random review",
+      "loading": "Loading…",
+      "empty": "Nothing here yet",
+      "emptySearch": "No matching ideas",
+      "emptyHint": "Press {shortcut} to capture your first idea",
+      "view": {
+        "card": "Cards",
+        "board": "Board",
+        "timeline": "Timeline"
+      }
+    },
+    "detail": {
+      "empty": "Pick an idea on the left to see its details",
+      "createdAt": "Created {time}",
+      "contentLabel": "Idea content",
+      "sectionStatus": "Status",
+      "sectionTags": "Tags",
+      "sectionProject": "Project",
+      "sectionSource": "Source",
+      "sectionAi": "AI analysis",
+      "sectionRelated": "Related · {count}",
+      "addTag": "+ Add",
+      "removeTag": "Remove tag",
+      "tagPlaceholder": "Tag name",
+      "noProject": "— No project —",
+      "newProject": "+ New project…",
+      "projectPlaceholder": "New project name, press Enter",
+      "markDone": "Mark as shipped",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "confirmDelete": "Delete this idea? You can restore it from the trash."
+    },
+    "ai": {
+      "keywords": "Keywords:",
+      "source": "Source:",
+      "advice": "Advice:",
+      "suggestion": {
+        "new": "Still unverified — add a concrete scenario or a counter-example.",
+        "check": "Find a real case to test it, or write it up in 200 words.",
+        "doing": "In flight — break it into 2–3 actionable steps.",
+        "done": "Already shipped. Archive it or reuse it as reference material."
+      },
+      "action": {
+        "outline": "Draft outline",
+        "relate": "Find related",
+        "task": "Turn into task"
+      },
+      "pending": {
+        "outline": "Outline generation is not wired to AI yet",
+        "relate": "Semantic matching is not wired to AI yet",
+        "task": "Task conversion is not wired to AI yet"
+      }
+    },
+    "toast": {
+      "welcome": "Press {shortcut} to capture anytime",
+      "saved": "Saved",
+      "statusChanged": "Switched to \"{status}\"",
+      "movedTo": "Moved to \"{status}\"",
+      "tagAdded": "Added tag {'#'}{tag}",
+      "projectSet": "Added to project \"{project}\"",
+      "projectCleared": "Removed from project",
+      "markedDone": "Marked as shipped",
+      "archived": "Archived",
+      "unarchived": "Unarchived",
+      "deleted": "Deleted",
+      "sourceChanged": "Source changed to \"{source}\""
+    },
+    "manage": {
+      "open": "Manage & data",
+      "title": "Data management",
+      "close": "Close",
+      "save": "Save",
+      "delete": "Delete",
+      "more": "More actions",
+      "tabs": {
+        "tags": "Tags",
+        "projects": "Projects",
+        "trash": "Trash",
+        "backup": "Backup"
+      },
+      "tags": {
+        "hint": "Click a name to rename; merge or recolor. Deleting a tag does not delete linked items.",
+        "rename": "Rename",
+        "renameHint": "Click to rename, blur to save",
+        "merge": "Merge",
+        "mergeInto": "Merge into",
+        "pickTarget": "Pick target tag",
+        "pickColor": "Click the swatch to open the palette",
+        "confirmMerge": "Confirm merge",
+        "deleteTitle": "Delete tag",
+        "confirmDelete": "Delete this tag? Linked items stay; only the tag binding is removed."
+      },
+      "projects": {
+        "hint": "Click a name to rename; adjust status and color. Projects with linked items cannot be deleted.",
+        "newPlaceholder": "New project name",
+        "create": "Create",
+        "stats": "{notes} items · {done} done",
+        "deleteBlocked": "Still has linked items",
+        "deleteTitle": "Delete project",
+        "confirmDelete": "Delete this project? This cannot be undone.",
+        "statusLabel": "Project status",
+        "status": {
+          "active": "Active",
+          "paused": "Paused",
+          "done": "Done",
+          "archived": "Archived"
+        }
+      },
+      "trash": {
+        "hint": "Deleted items are kept for 30 days. Restore or purge permanently.",
+        "empty": "Empty trash",
+        "emptyState": "Trash is empty",
+        "deletedAt": "Deleted {time}",
+        "daysLeft": "{days} days left",
+        "restore": "Restore",
+        "purge": "Delete forever",
+        "confirmEmpty": "Empty the trash? Everything will be permanently deleted.",
+        "confirmPurge": "Permanently delete this item? This cannot be undone."
+      },
+      "backup": {
+        "hint": "Save a full local copy of your app data. You can restore from it later.",
+        "manual": "Backup now",
+        "restoreFile": "Restore from file…",
+        "autoHint": "An automatic backup runs on each launch; the last 7 are kept.",
+        "empty": "No backups yet",
+        "restore": "Restore",
+        "restoreAndRestart": "Restore & restart",
+        "confirmRestore": "Restore will overwrite the current database and restart the app. Make sure you have a backup."
+      },
+      "toast": {
+        "tagRenamed": "Tag renamed",
+        "tagMerged": "Tags merged",
+        "tagDeleted": "Tag deleted",
+        "projectCreated": "Project created",
+        "projectRenamed": "Project renamed",
+        "projectUpdated": "Project updated",
+        "projectDeleted": "Project deleted",
+        "restored": "Restored from trash",
+        "purged": "Permanently deleted",
+        "emptied": "Removed {count} items",
+        "backedUp": "Backed up to {path}",
+        "restoreQueued": "Restore ready, restarting…"
+      }
+    }
+  },
+  "todo": {
+    "title": "Todo",
+    "count": "{count} items",
+    "createdAt": "Created {time}",
+    "emptyHint": "Press {shortcut} to add your first task",
+    "add": "Add",
+    "createPlaceholder": "Write a task and press Enter",
     "loading": "Loading…",
-    "empty": "No inspirations yet. Create one to get started."
+    "empty": "No tasks",
+    "selectHint": "Select a task to view details",
+    "noDescription": "No description",
+    "delete": "Delete",
+    "nav": {
+      "inbox": "Inbox",
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "all": "All",
+      "done": "Done"
+    },
+    "fields": {
+      "status": "Status",
+      "priority": "Priority",
+      "project": "Project",
+      "title": "Title",
+      "description": "Description",
+      "due": "Due date",
+      "tags": "Tags",
+      "subtasks": "Subtasks"
+    },
+    "dueQuick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dayAfter": "In 2 days",
+      "nextWeek": "Next week",
+      "clear": "Clear"
+    },
+    "searchPlaceholder": "Search title or description…",
+    "noProject": "No project",
+    "addTag": "+ Add",
+    "removeTag": "Remove tag",
+    "tagPlaceholder": "Tag name",
+    "status": {
+      "todo": "Todo",
+      "doing": "Doing",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "none": "None",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "subtaskPlaceholder": "Add a subtask and press Enter",
+    "priorityFilter": {
+      "group": "Priority",
+      "all": "All"
+    },
+    "view": {
+      "card": "List",
+      "board": "Board",
+      "timeline": "Timeline"
+    },
+    "export": "Export JSON",
+    "capture": {
+      "title": "Quick add",
+      "button": "Collect todo",
+      "hint": "Enter to save · Esc to close",
+      "placeholder": "Tomorrow 18:00 ship report {hash}work {at}project !high",
+      "insertTag": "Insert tag",
+      "insertProject": "Insert project",
+      "close": "Close",
+      "save": "Save"
+    },
+    "timeline": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "noDue": "No due date"
+    }
   }
 }

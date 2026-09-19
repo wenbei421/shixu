@@ -1,8 +1,11 @@
-mod inspiration;
+mod muse;
+mod todo;
 
-pub use inspiration::*;
+pub use muse::*;
+pub use todo::*;
 
 use serde::Serialize;
+use tauri::{AppHandle, Manager};
 
 use crate::{error::AppError, sqlite::Db};
 
@@ -11,6 +14,8 @@ use crate::{error::AppError, sqlite::Db};
 pub struct DbStatus {
     pub ok: bool,
     pub fragment_count: i64,
+    pub data_dir: String,
+    pub db_path: String,
 }
 
 #[tauri::command]
@@ -19,8 +24,53 @@ pub async fn get_db_status(db: tauri::State<'_, Db>) -> Result<DbStatus, AppErro
         .fetch_one(&db.pool)
         .await?;
 
+    let data_dir = db
+        .path
+        .parent()
+        .map(|p| p.display().to_string())
+        .unwrap_or_default();
+
     Ok(DbStatus {
         ok: true,
         fragment_count,
+        data_dir,
+        db_path: db.path.display().to_string(),
     })
+}
+
+/// 用系统资源管理器 / 文件管理器打开应用数据目录（状态栏点击 SQLite 状态用）
+#[tauri::command]
+pub async fn reveal_data_dir(app: AppHandle) -> Result<(), AppError> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Invalid(format!("resolve app_data_dir: {e}")))?;
+
+    if !dir.exists() {
+        std::fs::create_dir_all(&dir)?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&dir)
+            .spawn()
+            .map_err(AppError::from)?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&dir)
+            .spawn()
+            .map_err(AppError::from)?;
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&dir)
+            .spawn()
+            .map_err(AppError::from)?;
+    }
+
+    Ok(())
 }

@@ -6,12 +6,13 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "拾序 OS",
+        "title": "拾序",
         "width": 1000,
         "height": 800,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "decorations": true
+        "decorations": true,
+        "dragDropEnabled": false
       }
     ]
   },

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#A78BFA"/>
+  <text x="64" y="66"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="Source Han Sans CN, Noto Sans CJK SC, Microsoft YaHei, system-ui, sans-serif"
+        font-size="56"
+        font-weight="900"
+        fill="#FFFFFF"
+        letter-spacing="-3">拾序</text>
+</svg>

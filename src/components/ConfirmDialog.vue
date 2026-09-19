@@ -14,8 +14,8 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:open': [open: boolean]
-  confirm: []
-  cancel: []
+  'confirm': []
+  'cancel': []
 }>()
 
 function onCancel() {
@@ -24,8 +24,9 @@ function onCancel() {
 }
 
 function onConfirm() {
-  emit('update:open', false)
+  // confirm 必须先于关窗发出，否则依赖 open 状态里挂着 id 的调用方会读到 null
   emit('confirm')
+  emit('update:open', false)
 }
 </script>
 
