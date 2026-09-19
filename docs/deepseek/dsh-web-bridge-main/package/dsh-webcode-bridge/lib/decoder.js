@@ -1,0 +1,744 @@
+// decoder.js — 各内容服务 SSE/JSON 流解码器（content-script 风格全局注册表）。
+//
+// DeepSeek 解码器改编自 MIT 的 webcode 项目（three-water666/webcode）。本次改造：
+// • THINK/THINKING 片段不再丢弃：onThink 全程吐出思考增量，finish() 带回 thinking 全文；
+//   SET 累积式思考同样只吐增量（与 RESPONSE 同一套防重逻辑），流不会因重复而放大。
+// • 图片片段（IMAGE / image_asset_pointer 等）不再被读成空串：onImage 吐出，
+//   finish() 带回 images 数组——修复“网页明明出了图、桥却说什么都没有”。
+// • 多站点解码器按逆向证据对齐真实事件结构（reference/ 下的逆向仓库为证）：
+//   - glm：chatglm.cn 的 /assistant/stream 返回 {conversation_id, status, parts:[{content:[
+//     {status, type:'text'|'image'|'code'|'quote_result', text, image:[{image_url}]}]}]}（glm-free-api 同构）；
+//   - kimi：kimi.moonshot.cn 的 /completion/stream 是 {event:'cmpl'|'req'|'all_done'|'error', text} 事件流
+//     （Kimi-Free-API 同构；cmpl 才取正文，all_done/error 收尾）；
+//   - chatgpt：backend-api/conversation 同时存在 JSON-patch 帧 {o:'append', p:'/message/content/parts/0', v} 与
+//     结构帧 {message:{content:{parts}}} 两种形态（LLMs2API 同构），两种都认；
+//   - qwen：LLMs2API 实测浏览器端为 OpenAI 兼容 SSE（choices[].delta），qwen-free-api 的 h2 直连
+//     contents[] 结构仅作兼容兜底，不主用。
+// • 通过 globalThis.WebCodeStreamDecoders 按站点 decoder 字段选用。
+
+(function () {
+  'use strict';
+
+  const isRecord = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+  const readId = (v) => (typeof v === 'string' || typeof v === 'number') ? String(v) : null;
+  const normalizePath = (p) => p.replace(/^\/+|\/+$/g, '');
+  const joinPaths = (a, b) => {
+    const na = normalizePath(a || ''), nb = normalizePath(b || '');
+    if (!na) return nb;
+    if (!nb) return na;
+    return na + '/' + nb;
+  };
+
+  class SseDecoder {
+    constructor() { this.buf = ''; this.events = []; }
+    push(chunk) {
+      this.buf += chunk;
+      this.buf = this.buf.replace(/\r\n/g, '\n');
+      let idx;
+      while ((idx = this.buf.indexOf('\n\n')) >= 0) {
+        const raw = this.buf.slice(0, idx);
+        this.buf = this.buf.slice(idx + 2);
+        const ev = { event: 'message', data: '' };
+        const dataLines = [];
+        for (const line of raw.split('\n')) {
+          if (line.startsWith('event:')) ev.event = line.slice(6).trim();
+          else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart());
+        }
+        ev.data = dataLines.join('\n');
+        if (ev.data || ev.event === 'close') this.events.push(ev);
+      }
+      return this.events.splice(0);
+    }
+    finish() {
+      if (this.buf.trim()) { this.buf += '\n\n'; return this.push(''); }
+      return [];
+    }
+  }
+
+  // ---------- helpers shared by all decoders ----------
+  // 站点限流的统一判定（2026-09-13 真机修复）：
+  // 限流 hint 是流的**最后一帧**，而「流首段」这类现场取证只截前 400 字符，
+  // 真机上看到的 finish_reason 常常是 `rate_l` 这种被掐断的前缀。旧实现用
+  // `finish_reason === 'rate_limited'` 精确相等判断，一旦帧尾丢失就漏判，
+  // 整轮退化成 no_response_frames —— 长任务（含子代理）被反复打死却看不出
+  // 真因。这里改为「前缀匹配 + 服务端原话兜底」，两种证据任一命中即算限流。
+  const RATE_HINT_TEXT = /过于频繁|请求频繁|too\s*(?:many|frequent)|rate\s*limit|slow\s*down/i;
+  function rateLimitHint(hintError, rawText) {
+    const fr = String(hintError?.finish_reason || '');
+    // 前缀匹配：'rate_l' / 'rate_limited' / 'rate_limit_exceeded' 都算
+    if (fr && 'rate_limited'.startsWith(fr)) return true;
+    if (RATE_HINT_TEXT.test(fr)) return true;
+    const content = String(hintError?.content || '');
+    if (content && RATE_HINT_TEXT.test(content)) return true;
+    // 帧被截断、JSON 都解析不出来时，退回原始文本判断
+    return Boolean(rawText) && RATE_HINT_TEXT.test(String(rawText));
+  }
+  /** 从原始 hint 文本里取服务端原话（截断帧也能用）。 */
+  function rateLimitText(rawText) {
+    const m = /"content"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(String(rawText || ''));
+    return m ? m[1] : null;
+  }
+
+  function imageFromValue(v) {
+    if (!isRecord(v)) return null;
+    const url = v.url ?? v.image?.url ?? v.image_url?.url ?? (typeof v.image === 'string' ? v.image : null);
+    const base64 = v.b64_json ?? v.image?.b64_json ?? v.base64 ?? null;
+    if (!url && !base64) return null;
+    return { url: url || null, base64: base64 || null, mime: v.mime || v.media_type || 'image/png' };
+  }
+  function imagesIn(obj) {
+    const out = [];
+    const push = (v) => { const im = imageFromValue(v); if (im) out.push(im); };
+    for (const key of ['images', 'image_urls']) {
+      if (Array.isArray(obj?.[key])) for (const it of obj[key]) push(typeof it === 'string' ? { url: it } : it);
+    }
+    if (Array.isArray(obj?.files)) for (const f of obj.files) if (f && /image/i.test(String(f.file_type || f.type || f.mime || ''))) push(f);
+    return out;
+  }
+
+  // ---------- DeepSeek（JSON-patch over SSE）----------
+  const CONTENT_TYPES = new Set(['RESPONSE', 'THINK', 'THINKING']);
+  const IMAGE_TYPES = /image|picture|asset/i;
+  function readFragment(value) {
+    if (!isRecord(value) || typeof value.type !== 'string') return null;
+    const type = value.type.toUpperCase();
+    const content = CONTENT_TYPES.has(type) && typeof value.content === 'string' ? value.content : '';
+    const image = IMAGE_TYPES.test(type) ? imageFromValue(value) : null;
+    return { type, content, image };
+  }
+  function fragmentContentIndex(path, count) {
+    const m = /^response\/fragments\/(-1|\d+)\/content$/.exec(path);
+    if (!m) return null;
+    return m[1] === '-1' ? count - 1 : Number(m[1]);
+  }
+
+  class DeepSeekStreamDecoder {
+    constructor(options = {}) {
+      this.maxChars = options.maxChars || 256000;
+      this.onDelta = typeof options.onDelta === 'function' ? options.onDelta : null;
+      this.onThink = typeof options.onThink === 'function' ? options.onThink : null;
+      this.onImage = typeof options.onImage === 'function' ? options.onImage : null;
+      this.sse = new SseDecoder();
+      this.failed = false;
+      this.lastOp = '';
+      this.lastPath = '';
+      this.readyResponseId = null;
+      this.receivedClose = false;
+      this.response = null;
+      this.images = [];
+      this.receivedChars = 0;
+      // DeepSeek 的错误走 event:hint（type=error），不是 event:error——2026-09-13
+      // 真机实锤：限流时 ready(request/response id 都已分配)后紧跟
+      // hint{type:'error',content:'消息发送过于频繁',clear_response:true,
+      // finish_reason:'rate_limited'}，随后服务端撤回消息、零响应帧收流。
+      // 记录之，finish() 时把它作为比 no_response_frames 更真实的失败原因。
+      this.hintError = null;
+      // hint 帧的原始文本另存一份：限流帧常是流的最后一帧，帧尾被掐断时
+      // JSON.parse 会失败，只留结构化的 hintError 就什么都判不出来。
+      this.hintRaw = '';
+    }
+    push(chunk) {
+      this.receivedChars += chunk.length;
+      if (this.receivedChars > this.maxChars * 16) { this.failed = true; return; }
+      this.consume(this.sse.push(chunk));
+    }
+    finish() {
+      this.consume(this.sse.finish());
+      const collected = {
+        text: this.response ? this.response.fragments.filter((f) => f.type === 'RESPONSE').map((f) => f.content).join('').trim() : '',
+        thinking: this.response ? this.response.fragments.filter((f) => f.type === 'THINK' || f.type === 'THINKING').map((f) => f.content).join('').trim() : '',
+        images: this.response ? this.response.fragments.filter((f) => f.image).map((f) => f.image) : [],
+      };
+      // 限流优先于 invalid_stream：限流帧本身就是流的最后一帧，帧尾被掐断时
+      // JSON.parse 必然失败、this.failed 被置位；若先按 invalid_stream 返回，
+      // 就永远看不到「消息发送过于频繁」这个真因（真机 2026-09-13 实锤）。
+      if (this.failed) {
+        if (!this.response && rateLimitHint(this.hintError, this.hintRaw)) {
+          return {
+            complete: false, partial: false, reason: 'rate_limited', status: null,
+            hint: this.hintError?.content || rateLimitText(this.hintRaw) || null, ...collected,
+          };
+        }
+        return { complete: false, reason: 'invalid_stream', hint: null, ...collected };
+      }
+      if (!this.receivedClose || !this.response || this.response.status !== 'FINISHED') {
+        // 流没送到 FINISHED / close：网页端掉流、被合流截断、或用户切走页面。
+        // 旧实现直接 complete:false，把已经解码出来的正文与（可能完整的）工具
+        // 调用全部丢掉——真机表现就是「回复到一半突然停止，工具也不执行了」。
+        // 正文/思考/图片任何一项非空都算「部分可用」，把 partial 标出来交给
+        // 驱动层决定（它知道工具协议是否完整），而不是在解码层判死。
+        const partial = Boolean(collected.text || collected.thinking || collected.images.length);
+        // 零响应帧 + 限流 hint：归为 rate_limited 而不是笼统的 no_response_frames，
+        // 驱动层据此抛 RATE_LIMITED 交给上层退避重试（hint 只在零帧时升级——
+        // 若已有响应帧，hint 只是流中途的旁路提示，不影响结果归类）。
+        const rateLimited = !this.response && rateLimitHint(this.hintError, this.hintRaw);
+        return {
+          complete: false,
+          partial,
+          reason: this.response ? 'stream_ended_before_finished'
+            : rateLimited ? 'rate_limited'
+            : 'no_response_frames',
+          status: this.response?.status || null,
+          hint: rateLimited ? (this.hintError?.content || rateLimitText(this.hintRaw) || null) : null,
+          ...collected,
+        };
+      }
+      return { complete: true, ...collected };
+    }
+    consume(events) { for (const ev of events) this.consumeEvent(ev); }
+    consumeEvent(ev) {
+      if (ev.event === 'close') { this.receivedClose = true; return; }
+      if (ev.event === 'hint') {
+        // hint 帧先用原文兜底：限流帧常是流的最后一帧，帧尾可能被掐断，
+        // JSON.parse 失败时也要能认出「消息发送过于频繁」。
+        this.hintRaw = ((this.hintRaw || '') + String(ev.data || '')).slice(-2000);
+      }
+      let payload;
+      try { payload = JSON.parse(ev.data); } catch { this.failed = true; return; }
+      if (ev.event === 'error') { this.failed = true; return; }
+      if (ev.event === 'hint') {
+        if (isRecord(payload) && payload.type === 'error') {
+          this.hintError = { content: typeof payload.content === 'string' ? payload.content : '', finish_reason: typeof payload.finish_reason === 'string' ? payload.finish_reason : '' };
+        }
+        return;
+      }
+      if (!isRecord(payload)) return;
+      if (ev.event === 'ready') { this.readyResponseId = readId(payload.response_message_id); return; }
+      if (ev.event !== 'message') return;
+      this.consumeDelta(payload);
+    }
+    consumeDelta(delta) {
+      if (isRecord(delta) && typeof delta.o === 'string') this.lastOp = delta.o.toUpperCase();
+      if (isRecord(delta) && typeof delta.p === 'string') this.lastPath = normalizePath(delta.p);
+      const root = isRecord(delta) ? delta.v : undefined;
+      if (isRecord(root) && isRecord(root.response)) { this.consumeResponse(root.response); return; }
+      if (!this.response) return;
+      if (this.lastOp === 'BATCH' && Array.isArray(root)) {
+        for (const op of root) if (isRecord(op)) this.applyOperation(op, this.lastPath);
+        return;
+      }
+      this.applyOperation({ o: this.lastOp, p: this.lastPath, v: root });
+    }
+    /**
+     * 按**下标**把「新的 fragments 数组」相对「旧的」增量外发。
+     *
+     * 真机缺陷（用户报告「网页明明有输出，harness 端收不到」，本函数是主修）：
+     * DeepSeek 会把**整份 response 对象**反复重发（`{o:'SET', v:{response:{…}}}`
+     * 与 `{o:'SET', p:'response/fragments'}` 两种写法都出现过），每次 fragments
+     * 都比上一次长。旧实现只在「第一次见到 response」时（isFirst）外发增量，
+     * 之后每一次重发都**整份静默替换**——于是流式通道里 acc 停在第一帧的内容，
+     * 而 finish() 重新读 fragments 拿到的是完整正文。
+     *
+     * 后果链条（这正是用户看到的现象）：
+     *   1. 界面正文停在半路（只有第一批增量被发出）；
+     *   2. `index.js` 的协议边界探测基于 acc，工具调用落在被吞掉的后段里 →
+     *      一个 tool-call 块都不开，工具从未执行；
+     *   3. 收尾时 `finalText`（来自 finish()）与 `textSent` 分叉 → 该轮被判成
+     *      「正文空 + 只有思考」→ 交回 THINKING_ONLY_NO_ANSWER，或抛 STREAM_REWRITE。
+     * 用户看到的就是「明明有输出，却说我没有正文」。
+     *
+     * 三条边界（与 `applyOperation` 的 SET 分支同一套语义，必须一致）：
+     *   • 同下标内容**变长**且以旧内容为前缀 → 只发增长的后缀；
+     *   • 同下标内容被**改写**（不以旧内容为前缀）→ 不发，交给收尾的权威比对；
+     *   • **新增**下标 → 整段当增量发。
+     *
+     * @param {Array} next 新的 fragments（已 readFragment 归一化）
+     * @param {Array} prev 旧的 fragments（首次为 null）
+     */
+    emitFragmentDiff(next, prev) {
+      for (let i = 0; i < next.length; i++) {
+        const f = next[i];
+        const old = Array.isArray(prev) ? prev[i] : null;
+        const grow = (newText, oldText) => {
+          if (!old) return newText;                                   // 新增片段
+          if (newText === oldText) return '';                          // 没变
+          if (newText.startsWith(oldText)) return newText.slice(oldText.length); // 增长
+          return '';                                                   // 改写 → 不发
+        };
+        if (f.type === 'RESPONSE') {
+          const grown = grow(f.content, old?.content ?? '');
+          if (grown) { try { this.onDelta?.(grown); } catch {} }
+        } else if (f.type === 'THINK' || f.type === 'THINKING') {
+          const grown = grow(f.content, old?.content ?? '');
+          if (grown) { try { this.onThink?.(grown); } catch {} }
+        } else if (f.image && !old?.image) {
+          this.pushImage(f.image);
+        }
+      }
+    }
+    consumeResponse(response) {
+      if (response.role !== 'ASSISTANT' || !Array.isArray(response.fragments)) { this.failed = true; return; }
+      const id = readId(response.message_id) || this.readyResponseId;
+      if (!id) { this.failed = true; return; }
+      const prev = this.response ? this.response.fragments : null;
+      const next = response.fragments.map(readFragment).filter(Boolean);
+      // 先外发增量、再落库：emitFragmentDiff 需要旧的 fragments 做对比，
+      // 且它内部不会修改 this.response（避免「边比边改」读到半新半旧的状态）。
+      this.emitFragmentDiff(next, prev);
+      this.response = {
+        fragments: next,
+        id,
+        status: typeof response.status === 'string' ? response.status.toUpperCase() : '',
+      };
+    }
+    pushImage(img) {
+      this.images.push(img);
+      try { this.onImage?.(img); } catch {}
+    }
+    applyOperation(op, basePath) {
+      const response = this.response;
+      if (!response) return;
+      const opName = typeof op.o === 'string' ? op.o.toUpperCase() : this.lastOp;
+      const path = typeof op.p === 'string' ? joinPaths(basePath, op.p) : (basePath || '');
+
+      if (path === 'response/status' && typeof op.v === 'string') { response.status = op.v.toUpperCase(); return; }
+
+      if (path === 'response/fragments') {
+        if (opName === 'SET' && Array.isArray(op.v)) {
+          // SET 是**整数组替换**：旧实现直接 `response.fragments = 新数组` 就返回，
+          // 于是「新数组里比旧数组多出来的内容」在流式通道上被静默丢掉——
+          // 只有 finish() 重新读 fragments 时才可见。与 consumeResponse 是同一个洞
+          // 的两个入口（DeepSeek 两种写法都会出现），共用 emitFragmentDiff 保证语义一致。
+          const prev = response.fragments;
+          const next = op.v.map(readFragment).filter(Boolean);
+          this.emitFragmentDiff(next, prev);
+          response.fragments = next;
+          return;
+        }
+        if (opName === 'APPEND') {
+          const values = Array.isArray(op.v) ? op.v : [op.v];
+          for (const item of values) {
+            const f = readFragment(item);
+            if (!f) continue;
+            response.fragments.push(f);
+            if (f.type === 'RESPONSE' && f.content) this.onDelta?.(f.content);
+            else if ((f.type === 'THINK' || f.type === 'THINKING') && f.content) { try { this.onThink?.(f.content); } catch {} }
+            else if (f.image) this.pushImage(f.image);
+          }
+          return;
+        }
+        return;
+      }
+
+      const idx = fragmentContentIndex(path, response.fragments.length);
+      if (idx === null) {
+        // reasoning/thinking 相关路径的裸字符串值 → 思考增量；图片相关路径 → 图片
+        if (/think|reason/i.test(path) && typeof op.v === 'string' && op.v) { try { this.onThink?.(op.v); } catch {} }
+        else if (/image|asset|picture/i.test(path)) { const im = imageFromValue(op.v); if (im) this.pushImage(im); }
+        return;
+      }
+      if ((opName !== 'APPEND' && opName !== 'SET') || typeof op.v !== 'string') { this.failed = true; return; }
+      const fragment = response.fragments[idx];
+      if (!fragment) { this.failed = true; return; }
+      if (fragment.type !== 'RESPONSE') {
+        // THINK/THINKING：SET 是累积全文，只吐增量，避免思考链重复放大
+        if (opName === 'APPEND') {
+          fragment.content += op.v;
+          if (op.v && this.onThink) { try { this.onThink(op.v); } catch {} }
+        } else {
+          if (!op.v.startsWith(fragment.content)) { this.failed = true; return; }
+          const grown = op.v.slice(fragment.content.length);
+          fragment.content = op.v;
+          if (grown && this.onThink) { try { this.onThink(grown); } catch {} }
+        }
+        return;
+      }
+      if (opName === 'APPEND') {
+        fragment.content += op.v;
+        if (this.onDelta) { try { this.onDelta(op.v); } catch {} }
+      } else {
+        if (!op.v.startsWith(fragment.content)) { this.failed = true; return; }
+        const grown = op.v.slice(fragment.content.length);
+        fragment.content = op.v;
+        if (this.onDelta && grown) { try { this.onDelta(grown); } catch {} }
+      }
+    }
+  }
+
+  // ---------- OpenAI 兼容 SSE（通义等）----------
+  class OpenAiSseDecoder {
+    constructor(options = {}) {
+      this.onDelta = options.onDelta || null;
+      this.onThink = options.onThink || null;
+      this.onImage = options.onImage || null;
+      this.sse = new SseDecoder();
+      this.text = ''; this.think = ''; this.images = [];
+      this.done = false; this.failed = false;
+    }
+    push(c) { for (const ev of this.sse.push(c)) this.eat(ev); }
+    finish() {
+      for (const ev of this.sse.finish()) this.eat(ev);
+      if (this.failed) return { complete: false, reason: 'invalid_stream' };
+      if (!this.done) return { complete: false, reason: 'incomplete' };
+      return { complete: true, text: this.text.trim(), thinking: this.think.trim(), images: this.images };
+    }
+    eat(ev) {
+      if (ev.event === 'close') { this.done = true; return; }
+      if (ev.event === 'error') { this.failed = true; return; }
+      if (!ev.data) return;
+      const d = ev.data.trim();
+      if (d === '[DONE]') { this.done = true; return; }
+      let j; try { j = JSON.parse(d); } catch { return; }
+      if (j?.error) { this.failed = true; return; }
+      // Qwen 直连兜底（qwen-free-api 同构）：{sessionId, msgId, contentType, msgStatus, contents:[{contentType, role, content}]}
+      if (isRecord(j) && Array.isArray(j.contents) && !Array.isArray(j.choices)) {
+        for (const part of j.contents) {
+          if (!isRecord(part)) continue;
+          const ct = String(part.contentType || '');
+          if (ct !== 'text' && ct !== 'text2image') continue;
+          const t = typeof part.content === 'string' ? part.content : '';
+          if (t) {
+            this.text += t;
+            try { this.onDelta?.(t); } catch {}
+          }
+        }
+        if (String(j.msgStatus || '') === 'finished') this.done = true;
+        return;
+      }
+      const ch = j.choices?.[0];
+      const delta = ch?.delta || ch?.message || null;
+      if (!delta) return;
+      const t = typeof delta.content === 'string' ? delta.content : '';
+      if (t) { this.text += t; try { this.onDelta?.(t); } catch {} }
+      const th = (typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '') ||
+                 (typeof delta.reasoning === 'string' ? delta.reasoning : '');
+      if (th) { this.think += th; try { this.onThink?.(th) } catch {} }
+      // Qwen v2（2026-09-12 真机抓包）：思考摘要在 delta.extra.summary_thought.content
+      // （字符串数组），结束帧无 finish_reason，以 delta.status='finished' 收束。
+      const st = delta?.extra?.summary_thought?.content;
+      if (Array.isArray(st)) {
+        const t2 = st.filter((x) => typeof x === 'string').join('');
+        if (t2) { this.think += t2; try { this.onThink?.(t2); } catch {} }
+      }
+      for (const img of imagesIn(delta)) { this.images.push(img); try { this.onImage?.(img); } catch {} }
+      if (ch?.finish_reason || delta?.status === 'finished') this.done = true;
+    }
+  }
+
+  // ---------- ChatGPT（backend-api/conversation）----------
+  class ChatGptDecoder {
+    constructor(options = {}) {
+      this.onDelta = options.onDelta || null;
+      this.onThink = options.onThink || null;
+      this.onImage = options.onImage || null;
+      this.sse = new SseDecoder();
+      this.text = ''; this.think = ''; this.images = [];
+      this.partSeen = [];
+      this.done = false; this.failed = false;
+    }
+    push(c) { for (const ev of this.sse.push(c)) this.eat(ev); }
+    finish() {
+      for (const ev of this.sse.finish()) this.eat(ev);
+      if (this.failed) return { complete: false, reason: 'invalid_stream' };
+      if (!this.done) return { complete: false, reason: 'incomplete' };
+      return { complete: true, text: this.text.trim(), thinking: this.think.trim(), images: this.images };
+    }
+    emitText(t) { if (!t) return; this.text += t; try { this.onDelta?.(t); } catch {} }
+    emitThink(t) { if (!t) return; this.think += t; try { this.onThink?.(t); } catch {} }
+    emitParts(parts) {
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (typeof part === 'string') {
+          const seen = this.partSeen[i] ?? '';
+          if (part.startsWith(seen)) this.emitText(part.slice(seen.length));
+          else this.emitText(part); // 站点重写：全量补发（block-end 侧还有全文校验）
+          this.partSeen[i] = part;
+          continue;
+        }
+        if (!isRecord(part)) continue;
+        const ct = String(part.content_type || part.contentType || '');
+        if (/image/i.test(ct) || part.image_asset_pointer) {
+          const ptr = part.image_asset_pointer || part;
+          const img = {
+            url: ptr?.url ?? null,
+            pointer: ptr?.pointer_path ?? null,
+            mime: ptr?.content_type || 'image/png',
+            assetPointer: ct === 'image_asset_pointer',
+          };
+          this.images.push(img); try { this.onImage?.(img); } catch {}
+        } else if (typeof part.text === 'string') {
+          const seen = this.partSeen[i] ?? '';
+          if (part.text.startsWith(seen)) this.emitText(part.text.slice(seen.length));
+          this.partSeen[i] = part.text;
+        }
+      }
+    }
+    eat(ev) {
+      if (ev.event === 'close') { this.done = true; return; }
+      if (!ev.data) return;
+      let j; try { j = JSON.parse(ev.data); } catch { return; }
+      // JSON-patch 帧（LLMs2API 同构）：{o:'append', p:'/message/content/parts/0', v:'文本'}
+      if (isRecord(j) && typeof j.o === 'string' && typeof j.p === 'string' && typeof j.v === 'string') {
+        const p = String(j.p);
+        if (/reasoning|thinking/i.test(p)) { this.emitThink(j.v); return; }
+        if (p.includes('/message/') && j.v) { this.emitText(j.v); return; }
+        return;
+      }
+      if (isRecord(j) && j.type === 'message_stream_complete') { this.done = true; return; }
+      const v = j && Object.prototype.hasOwnProperty.call(j, 'v') ? j.v : j;
+      if (typeof v === 'string') { this.emitText(v); return; }
+      if (!isRecord(v)) return;
+      if (typeof v.reasoning === 'string') this.emitThink(v.reasoning);
+      if (typeof v.p === 'string' && /reasoning|thinking/i.test(v.p) && typeof v.v === 'string') this.emitThink(v.v);
+      const msg = v.message ?? v;
+      const parts = msg?.content?.parts ?? (Array.isArray(v.parts) ? v.parts : null);
+      if (Array.isArray(parts)) this.emitParts(parts);
+      if (msg?.status === 'finished_successfully' && (msg?.end_turn === true || msg?.metadata?.finish_details)) {
+        if (v.is_completion !== false) this.done = true;
+      }
+    }
+  }
+
+  // ---------- JSON-lines 家族（GLM / Kimi / 豆包 / Grok）----------
+  class JsonLinesDecoder {
+    constructor(options = {}) {
+      this.onDelta = options.onDelta || null;
+      this.onThink = options.onThink || null;
+      this.onImage = options.onImage || null;
+      this.buf = '';
+      this.text = ''; this.think = ''; this.images = [];
+      this.done = false; this.failed = false;
+      // 网页会话身份（C-1）：站点在流里报的会话 id。基类默认 null，子类在 obj()
+      // 里认字段名后填上。放在基类是为了让**所有**解码器的 finish() 输出形状一致
+      // ——驱动只认 result.conversationId，不必按站点分支。
+      this.conversationId = null;
+    }
+    push(c) {
+      this.buf += c;
+      let i;
+      while ((i = this.buf.indexOf('\n')) >= 0) {
+        const line = this.buf.slice(0, i).trim();
+        this.buf = this.buf.slice(i + 1);
+        if (line) this.line(line);
+      }
+    }
+    finish() {
+      if (this.buf.trim()) this.line(this.buf.trim());
+      if (this.failed) return { complete: false, reason: 'invalid_stream', conversationId: this.conversationId };
+      if (!this.done) return { complete: false, reason: 'incomplete', conversationId: this.conversationId };
+      return {
+        complete: true, text: this.text.trim(), thinking: this.think.trim(), images: this.images,
+        conversationId: this.conversationId,
+      };
+    }
+    line(l) {
+      if (l === '[DONE]') { this.done = true; return; }
+      let j; try { j = JSON.parse(l); } catch { return; }
+      this.obj(j);
+    }
+    emitText(t) { if (!t) return; this.text += t; try { this.onDelta?.(t); } catch {} }
+    emitThink(t) { if (!t) return; this.think += t; try { this.onThink?.(t); } catch {} }
+    pushImage(img) { this.images.push(img); try { this.onImage?.(img); } catch {} }
+    obj() {}
+  }
+
+  function makeJsonLineDecoder({ pickText, pickThink, pickImages, isDone }) {
+    return class extends JsonLinesDecoder {
+      obj(j) {
+        if (!isRecord(j)) return;
+        if (j.error) { this.failed = true; return; }
+        this.emitText(pickText(j));
+        this.emitThink(pickThink ? pickThink(j) : null);
+        for (const img of pickImages ? pickImages(j) : []) this.pushImage(img);
+        if (isDone && isDone(j)) this.done = true;
+      }
+    };
+  }
+
+  const str = (v) => (typeof v === 'string' && v) ? v : null;
+
+  // ---------- GLM（chatglm.cn /chatglm/backend-api/assistant/stream）----------
+  // 真实帧（glm-free-api 同构，标准 SSE）：data: {conversation_id, status, parts:[{status, content:[
+  //   {status, type:'text'|'image'|'code'|'quote_result', text, image:[{image_url}]}]}]}
+  // ⚠ text 是**累积全文**而非增量：同一条目在后帧里重复给出「从头到当前」的
+  //   完整文本（真机 2026-09-11 实测一句话被原样输出两遍——末两个 update/finish
+  //   帧各带全文）。这里按 part:content 槽位做累积差分，只外发新增后缀；
+  //   纯增量流（t 恒为新增后缀）与累积流在 diff 下语义一致，两种都兼容。
+  class GlmDecoder extends JsonLinesDecoder {
+    constructor(options) { super(options); this.seen = new Map(); }
+    push(chunk) {
+      this.buf += chunk;
+      this.buf = this.buf.replace(/\r\n/g, '\n');
+      let idx;
+      while ((idx = this.buf.indexOf('\n\n')) >= 0) {
+        const frame = this.buf.slice(0, idx);
+        this.buf = this.buf.slice(idx + 2);
+        const dataLines = [];
+        for (const line of frame.split('\n')) {
+          if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart());
+        }
+        const data = dataLines.join('\n');
+        if (data) this.line(data);
+      }
+    }
+    line(l) {
+      let j; try { j = JSON.parse(l); } catch { return; }
+      this.obj(j);
+    }
+    obj(j) {
+      if (!isRecord(j)) return;
+      // 会话身份：GLM 把会话 id 放在**每一帧**的 conversation_id 字段里（真机
+      // 2026-09-14 首帧实录见 finish() 的注释）。这是本桥唯一的会话身份来源——
+      // URL 形状与 DeepSeek 完全不同，靠 URL 取 id 必然恒为 null。
+      const cid = readId(j.conversation_id);
+      if (cid) this.conversationId = cid;
+      if (j.error) { this.failed = true; return; }
+      if (j.status === 'finish') this.done = true;
+      if (!Array.isArray(j.parts)) return;
+      for (let pi = 0; pi < j.parts.length; pi++) {
+        const part = j.parts[pi];
+        if (!isRecord(part) || !Array.isArray(part.content)) continue;
+        for (let ci = 0; ci < part.content.length; ci++) {
+          const c = part.content[ci];
+          if (!isRecord(c)) continue;
+          const type = String(c.type || '');
+          if (type === 'think') {
+            // GLM-5.3 思考内容：content[].type='think'，字段名 think。过程中为纯增量
+            // delta（真机抓包：28078 字符思维链拆成 861 个 delta），finish 帧却带
+            // 累积全文——与 text 一样走差分，全量重复帧被 startsWith 吸收。
+            const t = typeof c.think === 'string' ? c.think : '';
+            const tKey = 'think:' + type;
+            const prevT = this.seen.get(tKey) || '';
+            if (t && t !== prevT) {
+              if (t.startsWith(prevT)) {
+                this.seen.set(tKey, t);
+                if (t.length > prevT.length) this.emitThink(t.slice(prevT.length));
+              } else if (prevT.startsWith(t)) { /* 迟到的旧帧 */ }
+              else { this.seen.set(tKey, prevT + t); this.emitThink(t); }
+            }
+          } else if (type === 'text') {
+            const t = typeof c.text === 'string' ? c.text : '';
+            // 槽位 key 用 type 而不是 content 索引：GLM 的 finish 帧会把
+            // think/text 合并进同一条 content 数组，索引在帧间会漂移（真机实测）。
+            const key = type;
+            const prev = this.seen.get(key) || '';
+            if (t === prev) continue;                       // 累积流：末帧重复全文，跳过
+            if (t.startsWith(prev)) {
+              // 累积/增量 alike：只发新增后缀
+              this.seen.set(key, t);
+              if (t.length > prev.length) this.emitText(t.slice(prev.length));
+            } else if (prev.startsWith(t)) {
+              // 比已发内容更短的帧 = 迟到的旧帧，丢弃
+              continue;
+            } else {
+              // 与已发内容无前缀关系 = 新片段（glm-free-api 的增量语义），追加
+              this.seen.set(key, prev + t);
+              this.emitText(t);
+            }
+          } else if (type === 'image' && Array.isArray(c.image)) {
+            for (const im of c.image) {
+              if (isRecord(im) && typeof im.image_url === 'string' && im.image_url) {
+                this.pushImage({ url: im.image_url, mime: 'image/png' });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ---------- Kimi（kimi.moonshot.cn /api/chat/{id}/completion/stream）----------
+  // 真实帧（Kimi-Free-API 同构，标准 SSE）：data: {event:'cmpl', text} / {event:'req', id} /
+  // {event:'search_plus', msg:{type:'get_res', title, url}} / {event:'all_done'} / {event:'error'}。
+  // 只有 cmpl 事件携带正文增量；all_done/error 收尾。
+  class KimiDecoder extends JsonLinesDecoder {
+    push(chunk) {
+      this.buf += chunk;
+      this.buf = this.buf.replace(/\r\n/g, '\n');
+      let idx;
+      while ((idx = this.buf.indexOf('\n\n')) >= 0) {
+        const frame = this.buf.slice(0, idx);
+        this.buf = this.buf.slice(idx + 2);
+        const dataLines = [];
+        for (const line of frame.split('\n')) {
+          if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart());
+        }
+        const data = dataLines.join('\n');
+        if (data) this.line(data);
+      }
+    }
+    line(l) {
+      let j; try { j = JSON.parse(l); } catch { return; }
+      this.obj(j);
+    }
+    obj(j) {
+      if (!isRecord(j)) return;
+      const ev = String(j.event || '');
+      if (ev === 'error') { this.failed = true; return; }
+      if (ev === 'all_done') { this.done = true; return; }
+      if (ev === 'cmpl') {
+        const t = typeof j.text === 'string' ? j.text : '';
+        if (t) this.emitText(t);
+        const th = typeof j.reasoning === 'string' ? j.reasoning
+          : typeof j.thinking === 'string' ? j.thinking : '';
+        if (th) this.emitThink(th);
+        for (const img of imagesIn(j.extra_info)) this.pushImage(img);
+        for (const img of imagesIn(j)) this.pushImage(img);
+      }
+    }
+  }
+  const DoubaoDecoder = makeJsonLineDecoder({
+    pickText: (j) => str(j.event_data) ?? str(j.text) ?? str(j.delta?.message?.content?.text),
+    pickThink: (j) => str(j.reasoning) ?? str(j.thinking),
+    pickImages: (j) => imagesIn(j),
+    isDone: (j) => j.event === 'done' || j.is_finish === true || j.done === true,
+  });
+  const GrokDecoder = makeJsonLineDecoder({
+    pickText: (j) => {
+      if (j?.responseType && !/token/i.test(String(j.responseType))) return null;
+      return str(j?.result?.token) ?? str(j?.result?.response);
+    },
+    pickThink: (j) => str(j?.result?.thinkingToken) ?? str(j?.result?.reasoningToken),
+    pickImages: (j) => imagesIn(j?.result || j),
+    isDone: (j) => j?.responseType === 'done' || j?.result?.done === true,
+  });
+
+  // ---------- Claude（append_message SSE）----------
+  class ClaudeSseDecoder {
+    constructor(options = {}) {
+      this.onDelta = options.onDelta || null;
+      this.onThink = options.onThink || null;
+      this.onImage = options.onImage || null;
+      this.sse = new SseDecoder();
+      this.text = ''; this.think = ''; this.images = [];
+      this.done = false; this.failed = false;
+    }
+    push(c) { for (const ev of this.sse.push(c)) this.eat(ev); }
+    finish() {
+      for (const ev of this.sse.finish()) this.eat(ev);
+      if (this.failed) return { complete: false, reason: 'invalid_stream' };
+      if (!this.done) return { complete: false, reason: 'incomplete' };
+      return { complete: true, text: this.text.trim(), thinking: this.think.trim(), images: this.images };
+    }
+    eat(ev) {
+      if (ev.event === 'close') { this.done = true; return; }
+      if (!ev.data) return;
+      let j; try { j = JSON.parse(ev.data); } catch { return; }
+      if (j.error) { this.failed = true; return; }
+      if (j.type === 'content_block_delta') {
+        const d = j.delta || {};
+        if (d.type === 'thinking_delta' && typeof d.thinking === 'string') { this.think += d.thinking; try { this.onThink?.(d.thinking); } catch {} }
+        else if (typeof d.text === 'string' && d.text) { this.text += d.text; try { this.onDelta?.(d.text); } catch {} }
+      } else if (typeof j.completion === 'string' && j.completion) {
+        this.text += j.completion; try { this.onDelta?.(j.completion); } catch {}
+      } else if (j.type === 'message_stop' || j.stop_reason) {
+        this.done = true;
+      }
+    }
+  }
+
+  // 注册表：driver 按 providers.js 里站点的 decoder 字段取用。
+  // 'dom' 站点（Gemini 等）没有稳定网络流，由 driver 在页面里做终态抓取。
+  globalThis.WebCodeDeepSeekStreamDecoder = DeepSeekStreamDecoder;
+  globalThis.WebCodeStreamDecoders = Object.freeze({
+    deepseek: DeepSeekStreamDecoder,
+    'openai-sse': OpenAiSseDecoder,
+    chatgpt: ChatGptDecoder,
+    glm: GlmDecoder,
+    kimi: KimiDecoder,
+    doubao: DoubaoDecoder,
+    grok: GrokDecoder,
+    claude: ClaudeSseDecoder,
+    dom: null,
+  });
+})();
