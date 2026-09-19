@@ -20,7 +20,7 @@ jobs:
             args: --target aarch64-apple-darwin
 
           # Intel macOS
-          - platform: macos-latest
+          - platform: macos-15-intel
             rust-target: x86_64-apple-darwin
             args: --target x86_64-apple-darwin
 
@@ -64,9 +64,11 @@ jobs:
 
       - name: Ensure macOS Rust target is installed
         if: matrix.rust-target != ''
+        shell: bash
         run: |
           rustup target add "${{ matrix.rust-target }}"
           rustup target list --installed
+          rustup target list --installed | grep -Fx "${{ matrix.rust-target }}"
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
