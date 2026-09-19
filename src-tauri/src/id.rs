@@ -49,7 +49,9 @@ pub fn next_id() -> Result<i64, AppError> {
 pub fn next_id_with_worker(worker_id: u16) -> Result<i64, AppError> {
     let worker = u64::from(worker_id);
     if worker > MAX_WORKER {
-        return Err(AppError::Invalid(format!("worker_id out of range: {worker_id}")));
+        return Err(AppError::Invalid(format!(
+            "worker_id out of range: {worker_id}"
+        )));
     }
 
     let mut guard = STATE

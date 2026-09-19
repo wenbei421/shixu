@@ -1,12 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, QueryBuilder, Sqlite, SqliteConnection, SqlitePool};
 
-use crate::{
-    error::AppError,
-    id,
-    id::now_ms,
-    sqlite::Db,
-};
+use crate::{error::AppError, id, id::now_ms, sqlite::Db};
 
 const TASK_SELECT: &str = r#"
 SELECT
@@ -122,9 +117,7 @@ fn validate_priority(priority: &str) -> Result<(), AppError> {
 }
 
 async fn fetch_task(pool: &SqlitePool, task_id: i64) -> Result<TaskDto, AppError> {
-    let sql = format!(
-        "{TASK_SELECT} WHERE t.id = ? AND t.deleted_at IS NULL"
-    );
+    let sql = format!("{TASK_SELECT} WHERE t.id = ? AND t.deleted_at IS NULL");
     let row: TaskRow = sqlx::query_as(&sql)
         .bind(task_id)
         .fetch_optional(pool)
@@ -486,10 +479,7 @@ pub async fn list_todo_subtasks(
          WHERE t.deleted_at IS NULL AND t.parent_id = ?
          ORDER BY t.sort_order ASC, t.created_at ASC"
     );
-    let rows: Vec<TaskRow> = sqlx::query_as(&sql)
-        .bind(pid)
-        .fetch_all(&db.pool)
-        .await?;
+    let rows: Vec<TaskRow> = sqlx::query_as(&sql).bind(pid).fetch_all(&db.pool).await?;
     Ok(rows.into_iter().map(TaskDto::from).collect())
 }
 
@@ -556,9 +546,8 @@ pub async fn get_todo_counts(
         }
     }
 
-    let base = format!(
-        "t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL{priority_sql}"
-    );
+    let base =
+        format!("t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL{priority_sql}");
 
     let sql = format!(
         r#"

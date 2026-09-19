@@ -67,7 +67,14 @@
       "language": "Language",
       "languageDesc": "Choose the display language.",
       "theme": "Theme",
-      "themeDesc": "Choose the theme for the app."
+      "themeDesc": "Choose the theme for the app.",
+      "reset": "Reset system",
+      "resetDesc": "Clear notes, todos, tags, projects, and backups for this environment, restore default interface settings, then restart. Sample data is not created again.",
+      "resetAction": "Reset and restart",
+      "resetCancel": "Cancel",
+      "resetTitle": "Reset the system?",
+      "resetConfirm": "This cannot be undone. Notes, todos, and backups will be cleared, and the app will restart without sample data.",
+      "resetFailed": "Reset failed"
     },
     "about": {
       "title": "拾序",

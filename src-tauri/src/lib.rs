@@ -79,6 +79,7 @@ pub fn run() {
             commands::list_muse_backups,
             commands::restore_muse_db,
             commands::restart_app,
+            commands::reset_system,
             commands::list_todo_tasks,
             commands::list_todo_subtasks,
             commands::create_todo_task,

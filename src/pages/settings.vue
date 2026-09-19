@@ -11,6 +11,7 @@ import {
 } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import MuseManagePanel from '@/components/muse/MuseManagePanel.vue'
 import MuseToaster from '@/components/muse/MuseToaster.vue'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
@@ -23,14 +24,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useMuseToast } from '@/composables/useMuseToast'
 import { getLanguageLabel, supportedLanguages } from '@/lib/config'
+import { restartApp } from '@/lib/muse'
+import { resetSystem } from '@/lib/system'
 import { cn } from '@/lib/utils'
 import { useSettingsStore } from '@/stores/settings'
 
 type SettingsSection = 'general' | 'backup' | 'tags' | 'projects' | 'about'
 
 /** Keep in sync with package.json version */
-const APP_VERSION = '0.18.0'
+const APP_VERSION = '0.0.1'
 
 interface NavItem {
   id: SettingsSection
@@ -46,7 +50,10 @@ interface NavGroup {
 const { t, locale } = useI18n()
 const availableLanguages = ref<Language[]>(supportedLanguages())
 const settingsStore = useSettingsStore()
+const { toast } = useMuseToast()
 const activeSection = ref<SettingsSection>('general')
+const resetOpen = ref(false)
+const resetting = ref(false)
 
 const navGroups = computed<NavGroup[]>(() => [
   {
@@ -98,6 +105,24 @@ function handleLanguageSelect(newLocale: string) {
   if (!newLocale || !availableLanguages.value.some(sl => sl.value === newLocale))
     return
   settingsStore.setSetting<string>('language', newLocale)
+}
+
+async function confirmReset() {
+  if (resetting.value)
+    return
+  resetting.value = true
+  try {
+    await settingsStore.clearSettings()
+    localStorage.clear()
+    sessionStorage.clear()
+    await resetSystem()
+    await restartApp()
+  }
+  catch (error) {
+    resetting.value = false
+    const message = error instanceof Error ? error.message : String(error)
+    toast(message || t('settings.general.resetFailed'))
+  }
 }
 </script>
 
@@ -178,6 +203,25 @@ function handleLanguageSelect(newLocale: string) {
             </div>
             <ThemeSwitch class="shrink-0" />
           </div>
+
+          <div class="border-destructive/30 bg-card flex items-center justify-between gap-6 rounded-xl border px-5 py-4">
+            <div class="min-w-0">
+              <Label class="text-sm font-medium">
+                {{ t('settings.general.reset') }}
+              </Label>
+              <p class="text-muted-foreground mt-0.5 text-xs">
+                {{ t('settings.general.resetDesc') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="bg-destructive hover:bg-destructive/90 inline-flex h-8 shrink-0 items-center rounded-md px-3 text-sm text-white disabled:opacity-50"
+              :disabled="resetting"
+              @click="resetOpen = true"
+            >
+              {{ t('settings.general.resetAction') }}
+            </button>
+          </div>
         </div>
 
         <!-- Shared data: tags / projects / backup -->
@@ -202,5 +246,13 @@ function handleLanguageSelect(newLocale: string) {
       </div>
     </div>
   </div>
+  <ConfirmDialog
+    v-model:open="resetOpen"
+    :title="t('settings.general.resetTitle')"
+    :description="t('settings.general.resetConfirm')"
+    :confirm-label="t('settings.general.resetAction')"
+    :cancel-label="t('settings.general.resetCancel')"
+    @confirm="confirmReset"
+  />
   <MuseToaster />
 </template>
