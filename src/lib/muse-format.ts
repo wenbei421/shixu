@@ -1,5 +1,7 @@
 /** Muse 灵感库的展示层格式化：相对时间、时间线分组、标签取色、搜索高亮。 */
 
+import { formatDate, formatDateTime } from './datetime'
+
 const MINUTE = 60_000
 const HOUR = 3_600_000
 const DAY = 86_400_000
@@ -32,7 +34,7 @@ function startOfDay(ts: number): number {
   return d.getTime()
 }
 
-/** 相对时间：「刚刚 / 3 分钟前 / 2 天前」，超过 7 天显示月日 */
+/** 相对时间：「刚刚 / 3 分钟前 / 2 天前」，超过 7 天显示 `yyyy-MM-dd HH:mm` */
 export function relativeTime(ts: number, locale: string, now = Date.now()): string {
   const diff = Math.max(now - ts, 0)
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
@@ -46,10 +48,10 @@ export function relativeTime(ts: number, locale: string, now = Date.now()): stri
   if (diff < 7 * DAY)
     return rtf.format(-Math.floor(diff / DAY), 'day')
 
-  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(ts)
+  return formatDateTime(ts)
 }
 
-/** 时间线分组名：今天 / 昨天 / N 天前 / 年月日（详细设计 5.3.4） */
+/** 时间线分组名：今天 / 昨天 / N 天前 / yyyy-MM-dd（详细设计 5.3.4） */
 export function dateGroupKey(ts: number, locale: string, now = Date.now()): string {
   const diffDays = Math.round((startOfDay(now) - startOfDay(ts)) / DAY)
   if (diffDays <= 0)
@@ -57,7 +59,7 @@ export function dateGroupKey(ts: number, locale: string, now = Date.now()): stri
   if (diffDays < 7)
     return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(-diffDays, 'day')
 
-  return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(ts)
+  return formatDate(ts)
 }
 
 export interface TextSegment {

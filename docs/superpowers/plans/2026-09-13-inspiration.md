@@ -2,7 +2,7 @@
 
 > **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
 
-**目标：** 在拾序 OS 落地本地灵感库：分类筛选 + 列表、标签、MinimalAiEditor 编辑 / MinimalDocumentPreview 预览，SQLite 雪花主键。
+**目标：** 在拾序落地本地灵感库：分类筛选 + 列表、标签、MinimalAiEditor 编辑 / MinimalDocumentPreview 预览，SQLite 雪花主键。
 
 **架构：** Tauri + sqlx 本地库（appData）；Rust 生成雪花 id（JSON 字符串）；Vue 页左分类右列表；编辑器用 `@icreate/minimal-ai-editor`，图片 base64 内嵌 HTML。
 
@@ -45,7 +45,7 @@
 
 - [ ] **步骤 1：** 实现 Twitter 风格雪花（41bit 时间 + 5bit worker + 5bit datacenter 可简化为 10bit worker + 12bit seq），`LOCAL_WORKER_ID = 0`，`UNCLASSIFIED_CATEGORY_ID` 写死常量。
 - [ ] **步骤 2：** 提供 `next_id() -> i64`、`id_to_string(i64) -> String`、`parse_id(&str) -> Result<i64, AppError>`。
-- [ ] **步骤 3：** `cargo test -p shixu-os --lib id`（或单元测 `next_id` 单调）。
+- [ ] **步骤 3：** `cargo test -p shixu --lib id`（或单元测 `next_id` 单调）。
 
 ### 任务 2：Migration
 

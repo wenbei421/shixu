@@ -2,6 +2,8 @@
 import type { TodoTask } from '@/lib/todo'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
+import { formatDate, formatTime } from '@/lib/datetime'
 import { cn } from '@/lib/utils'
 import { useTodoStore } from '@/stores/todo'
 
@@ -74,11 +76,7 @@ const groups = computed<TimelineGroup[]>(() => {
     }
 
     const key = dayKey(dueDay)
-    const label = new Date(dueDay).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      weekday: 'short',
-    })
+    const label = formatDate(dueDay)
     ensure(key, label, 'normal').tasks.push(task)
   }
 
@@ -102,7 +100,7 @@ function onToggle(id: string, done: boolean) {
 </script>
 
 <template>
-  <div class="min-h-0 flex-1 overflow-y-auto p-3">
+  <div class="min-h-0 flex-1 overflow-y-auto pt-4 pb-7">
     <p v-if="!groups.length" class="text-muted-foreground py-10 text-center text-sm">
       {{ t('todo.empty') }}
     </p>
@@ -145,10 +143,11 @@ function onToggle(id: string, done: boolean) {
                 v-if="task.dueAt"
                 :class="group.tone === 'overdue' ? 'text-destructive' : ''"
               >
-                {{ new Date(task.dueAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) }}
+                {{ formatTime(task.dueAt) }}
               </span>
               <span v-if="task.projectName">{{ task.projectName }}</span>
               <span v-for="tag in task.tags" :key="tag">#{{ tag }}</span>
+              <OutOfFilterHint v-if="store.retainedId === task.id" />
             </div>
           </div>
         </li>

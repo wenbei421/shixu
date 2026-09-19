@@ -2,6 +2,7 @@
 import type { Note } from '@/lib/muse'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import { dateGroupKey, highlightSegments } from '@/lib/muse-format'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
@@ -60,6 +61,7 @@ const groups = computed(() => {
 
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <MuseStatusBadge :status="note.status" />
+          <OutOfFilterHint v-if="store.retainedId === note.id" />
           <span
             v-for="tag in note.tags"
             :key="tag"

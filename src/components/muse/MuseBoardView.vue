@@ -2,6 +2,7 @@
 import type { NoteStatus } from '@/lib/muse'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
 import { STATUS_ORDER } from '@/lib/muse'
 import { cn } from '@/lib/utils'
@@ -45,6 +46,15 @@ function onDragOver(status: NoteStatus, event: DragEvent) {
   dragOverStatus.value = status
 }
 
+function onDragLeave(status: NoteStatus, event: DragEvent) {
+  const current = event.currentTarget
+  const next = event.relatedTarget
+  if (current instanceof HTMLElement && next instanceof Node && current.contains(next))
+    return
+  if (dragOverStatus.value === status)
+    dragOverStatus.value = null
+}
+
 async function onDrop(status: NoteStatus, event: DragEvent) {
   event.preventDefault()
   const id = event.dataTransfer?.getData('text/plain') || draggingId.value
@@ -77,8 +87,9 @@ async function onDrop(status: NoteStatus, event: DragEvent) {
         'bg-muted/50 flex min-h-0 flex-col rounded-lg border p-2 transition-colors',
         dragOverStatus === status ? 'border-primary bg-primary/5' : 'border-transparent',
       )"
+      @dragenter="onDragOver(status, $event)"
       @dragover="onDragOver(status, $event)"
-      @dragleave="dragOverStatus = null"
+      @dragleave="onDragLeave(status, $event)"
       @drop="onDrop(status, $event)"
     >
       <header class="flex items-center gap-2 px-1.5 pb-2.5">
@@ -94,15 +105,16 @@ async function onDrop(status: NoteStatus, event: DragEvent) {
           :key="note.id"
           draggable="true"
           :class="cn(
-            'bg-card cursor-grab rounded-md border px-2.5 py-2 text-[12.5px] leading-relaxed transition-colors',
+            'bg-card cursor-grab rounded-md border border-border px-2.5 py-2 text-[12.5px] leading-relaxed transition-colors active:cursor-grabbing',
             draggingId === note.id && 'opacity-40',
             note.id === store.selectedId
-              ? 'border-primary ring-primary/15 ring-2'
-              : 'border-border hover:border-muted-foreground/40',
+              ? 'border-primary bg-accent'
+              : 'hover:bg-accent/70',
           )"
           @click="store.select(note.id)"
           @dragstart="onDragStart(note.id, $event)"
           @dragend="onDragEnd"
+          @dragover.prevent
         >
           <p class="break-words">
             {{ preview(note.content) }}
@@ -116,6 +128,7 @@ async function onDrop(status: NoteStatus, event: DragEvent) {
               #{{ tag }}
             </span>
           </div>
+          <OutOfFilterHint v-if="store.retainedId === note.id" class="mt-1.5" />
         </article>
       </div>
     </section>

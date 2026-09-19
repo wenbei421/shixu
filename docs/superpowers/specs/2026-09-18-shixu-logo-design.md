@@ -1,4 +1,4 @@
-# SHIXU OS Logo 设计
+# SHIXU Logo 设计
 
 > 日期：2026-09-18  
 > 范围：品牌标识 + Tauri 图标全套替换  
@@ -6,7 +6,7 @@
 
 ## 1. 目标
 
-替换 `src-tauri/icons/` 下全套默认 Tauri 图标，使用 SHIXU OS 自有品牌 logo：
+替换 `src-tauri/icons/` 下全套默认 Tauri 图标，使用 SHIXU 自有品牌 logo：
 
 - 圆角矩形容器 + 紫蓝底 + 白色"拾序"双字
 - 视觉风格对齐国内主流 App 字标路线（淘宝"淘"、京东"京"、VIVO）

@@ -514,3 +514,70 @@ pub async fn export_todo_json(db: tauri::State<'_, Db>) -> Result<TodoExportDto,
         tasks: rows.into_iter().map(TaskDto::from).collect(),
     })
 }
+
+/// 5 个视角下的计数。字段名与前端的 `TodoPerspective` 联合类型一一对应，
+/// 用 `camelCase` 序列化后，前端可直接 `counts[item.id]` 取值。
+///
+/// `all` 是 SQLite 保留字，SQL 侧用别名 `"all"`；Rust 字段不能叫 `all`，
+/// 所以用 `all_count` + `sqlx(rename)` / `serde(rename)` 双向映射。
+#[derive(Debug, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoCountsDto {
+    pub inbox: i64,
+    pub today: i64,
+    pub upcoming: i64,
+    #[sqlx(rename = "all")]
+    #[serde(rename = "all")]
+    pub all_count: i64,
+    pub done: i64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoCountsQuery {
+    pub priority: Option<String>,
+}
+
+/// 在「指定 priority 过滤下」统计每个 perspective 的任务数。
+/// 与 `list_todo_tasks` 的 WHERE 语义完全对齐（不含 keyword，关键词只是搜索过滤不影响计数）。
+#[tauri::command]
+pub async fn get_todo_counts(
+    db: tauri::State<'_, Db>,
+    query: TodoCountsQuery,
+) -> Result<TodoCountsDto, AppError> {
+    // 把 priority 过滤拼成 SQL 片段（与 list_todo_tasks 完全一致）
+    let mut priority_sql = String::new();
+    if let Some(ref p) = query.priority {
+        let p = p.trim();
+        if !p.is_empty() && p != "all" {
+            validate_priority(p)?;
+            // p 已经被 validate_priority 校验过，不会出现 SQL 注入
+            priority_sql.push_str(&format!(" AND t.priority = '{p}'"));
+        }
+    }
+
+    let base = format!(
+        "t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL{priority_sql}"
+    );
+
+    let sql = format!(
+        r#"
+        SELECT
+          (SELECT COUNT(*) FROM todo_tasks t WHERE {base}
+              AND t.project_id IS NULL AND t.due_at IS NULL AND t.status != 'done') AS inbox,
+          (SELECT COUNT(*) FROM todo_tasks t WHERE {base}
+              AND t.status != 'done' AND t.due_at IS NOT NULL
+              AND t.due_at < (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)) AS today,
+          (SELECT COUNT(*) FROM todo_tasks t WHERE {base}
+              AND t.status != 'done' AND t.due_at IS NOT NULL
+              AND t.due_at >= (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)) AS upcoming,
+          (SELECT COUNT(*) FROM todo_tasks t WHERE {base}
+              AND t.status != 'done') AS "all",
+          (SELECT COUNT(*) FROM todo_tasks t WHERE {base}
+              AND t.status = 'done') AS done
+        "#
+    );
+
+    let row: TodoCountsDto = sqlx::query_as(&sql).fetch_one(&db.pool).await?;
+    Ok(row)
+}

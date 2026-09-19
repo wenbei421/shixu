@@ -43,6 +43,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             commands::get_db_status,
+            commands::reveal_data_dir,
             commands::list_muse_notes,
             commands::get_muse_note,
             commands::get_muse_note_counts,
@@ -83,6 +84,7 @@ pub fn run() {
             commands::complete_todo_task,
             commands::delete_todo_task,
             commands::export_todo_json,
+            commands::get_todo_counts,
         ])
         .setup(|app| {
             sqlite::set_db(app).map_err(|e| e.to_string())?;

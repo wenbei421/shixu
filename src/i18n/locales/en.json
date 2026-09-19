@@ -1,7 +1,10 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "No longer matches this filter"
   },
   "nav": {
     "home": "Overview",
@@ -28,13 +31,15 @@
     "localOnly": "On-device only"
   },
   "statusbar": {
-    "contextIdle": "Context Engine idle",
-    "active": "Active",
-    "focus": "Focus",
     "fragments": "{count} fragments",
     "sqliteReady": "SQLite ready",
     "sqliteOffline": "SQLite offline",
-    "aiIdle": "AI Core offline"
+    "sqliteOpenDir": "Open data folder",
+    "sqliteTooltip": "{dbPath}\nClick to open the data folder",
+    "version": "v{version}",
+    "versionTooltip": "Current version {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "Current route: {path}"
   },
   "pages": {
     "placeholder": "{name} shell is ready. Content will be wired next."
@@ -50,7 +55,7 @@
     "description": "Manage the app settings and preferences here.",
     "nav": {
       "groupSettings": "Settings",
-      "groupMuse": "Muse",
+      "groupData": "Data",
       "groupOther": "Other",
       "general": "General",
       "backup": "Data & backup",
@@ -65,9 +70,9 @@
       "themeDesc": "Choose the theme for the app."
     },
     "about": {
-      "title": "拾序 OS / Muse inspiration",
+      "title": "拾序",
       "version": "Version {version}",
-      "copyright": "© 拾序 OS. All rights reserved."
+      "copyright": "© 拾序. All rights reserved."
     },
     "theme": {
       "label": "Theme",
@@ -75,10 +80,6 @@
       "light": "Light",
       "dark": "Dark",
       "system": "System"
-    },
-    "muse": {
-      "label": "Muse",
-      "description": "Tags, projects, and local backups."
     }
   },
   "muse": {
@@ -207,7 +208,7 @@
     },
     "manage": {
       "open": "Manage & data",
-      "title": "Muse management",
+      "title": "Data management",
       "close": "Close",
       "save": "Save",
       "delete": "Delete",
@@ -219,7 +220,7 @@
         "backup": "Backup"
       },
       "tags": {
-        "hint": "Click a name to rename; merge or recolor. Deleting a tag does not delete ideas.",
+        "hint": "Click a name to rename; merge or recolor. Deleting a tag does not delete linked items.",
         "rename": "Rename",
         "renameHint": "Click to rename, blur to save",
         "merge": "Merge",
@@ -228,14 +229,14 @@
         "pickColor": "Click the swatch to open the palette",
         "confirmMerge": "Confirm merge",
         "deleteTitle": "Delete tag",
-        "confirmDelete": "Delete this tag? Linked ideas stay; only the tag binding is removed."
+        "confirmDelete": "Delete this tag? Linked items stay; only the tag binding is removed."
       },
       "projects": {
-        "hint": "Click a name to rename; adjust status and color. Projects with linked ideas cannot be deleted.",
+        "hint": "Click a name to rename; adjust status and color. Projects with linked items cannot be deleted.",
         "newPlaceholder": "New project name",
         "create": "Create",
-        "stats": "{notes} notes · {done} shipped",
-        "deleteBlocked": "Still has linked ideas",
+        "stats": "{notes} items · {done} done",
+        "deleteBlocked": "Still has linked items",
         "deleteTitle": "Delete project",
         "confirmDelete": "Delete this project? This cannot be undone.",
         "statusLabel": "Project status",
@@ -247,7 +248,7 @@
         }
       },
       "trash": {
-        "hint": "Deleted ideas are kept for 30 days. Restore or purge permanently.",
+        "hint": "Deleted items are kept for 30 days. Restore or purge permanently.",
         "empty": "Empty trash",
         "emptyState": "Trash is empty",
         "deletedAt": "Deleted {time}",
@@ -255,10 +256,10 @@
         "restore": "Restore",
         "purge": "Delete forever",
         "confirmEmpty": "Empty the trash? Everything will be permanently deleted.",
-        "confirmPurge": "Permanently delete this idea? This cannot be undone."
+        "confirmPurge": "Permanently delete this item? This cannot be undone."
       },
       "backup": {
-        "hint": "Save a full local copy of your Muse library. You can restore from it later.",
+        "hint": "Save a full local copy of your app data. You can restore from it later.",
         "manual": "Backup now",
         "restoreFile": "Restore from file…",
         "autoHint": "An automatic backup runs on each launch; the last 7 are kept.",
@@ -285,6 +286,9 @@
   },
   "todo": {
     "title": "Todo",
+    "count": "{count} items",
+    "createdAt": "Created {time}",
+    "emptyHint": "Press {shortcut} to add your first task",
     "add": "Add",
     "createPlaceholder": "Write a task and press Enter",
     "loading": "Loading…",
@@ -309,9 +313,18 @@
       "tags": "Tags",
       "subtasks": "Subtasks"
     },
+    "dueQuick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dayAfter": "In 2 days",
+      "nextWeek": "Next week",
+      "clear": "Clear"
+    },
     "searchPlaceholder": "Search title or description…",
     "noProject": "No project",
-    "tagPlaceholder": "Type a tag and press Enter",
+    "addTag": "+ Add",
+    "removeTag": "Remove tag",
+    "tagPlaceholder": "Tag name",
     "status": {
       "todo": "Todo",
       "doing": "Doing",
@@ -337,6 +350,7 @@
     "export": "Export JSON",
     "capture": {
       "title": "Quick add",
+      "button": "Collect todo",
       "hint": "Enter to save · Esc to close",
       "placeholder": "Tomorrow 18:00 ship report {hash}work {at}project !high",
       "insertTag": "Insert tag",

@@ -68,6 +68,24 @@ export function listTodoSubtasks(parentId: string) {
   return invoke<TodoTask[]>('list_todo_subtasks', { parentId })
 }
 
+/** 五个视角的实时计数，对应后端 `TodoCountsDto` */
+export interface TodoCounts {
+  inbox: number
+  today: number
+  upcoming: number
+  all: number
+  done: number
+}
+
+export interface TodoCountsQuery {
+  /** 与 `ListTodoQuery.priority` 同语义：'all' / 'high' / 'medium' / 'low' / 'none' */
+  priority?: TodoPriority | 'all'
+}
+
+export function getTodoCounts(query: TodoCountsQuery = {}) {
+  return invoke<TodoCounts>('get_todo_counts', { query })
+}
+
 export function createTodoTask(req: CreateTodoPayload) {
   return invoke<TodoTask>('create_todo_task', { req })
 }

@@ -4,6 +4,7 @@ import { Archive, ArchiveRestore, Check, RotateCcw, Sparkles, Trash2, X } from '
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
 import { NOTE_SOURCES, STATUS_META, STATUS_ORDER } from '@/lib/muse'
 import { relativeTime } from '@/lib/muse-format'
@@ -386,6 +387,7 @@ defineExpose({
             {{ t(`muse.status.${status}`) }}
           </button>
         </div>
+        <OutOfFilterHint v-if="store.retainedId === note.id" />
 
         <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
           {{ t('muse.detail.sectionTags') }}

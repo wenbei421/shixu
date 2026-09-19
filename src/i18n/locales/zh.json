@@ -1,7 +1,10 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "已不符合当前筛选"
   },
   "nav": {
     "home": "今日总览",
@@ -28,13 +31,15 @@
     "localOnly": "全本地"
   },
   "statusbar": {
-    "contextIdle": "Context Engine 待命",
-    "active": "活跃",
-    "focus": "专注",
     "fragments": "{count} 片段",
     "sqliteReady": "SQLite 就绪",
     "sqliteOffline": "SQLite 未连接",
-    "aiIdle": "AI Core 未连接"
+    "sqliteOpenDir": "打开数据目录",
+    "sqliteTooltip": "{dbPath}\n点击打开数据目录",
+    "version": "v{version}",
+    "versionTooltip": "当前版本 {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "当前路由：{path}"
   },
   "pages": {
     "placeholder": "{name}模块骨架已就绪，业务内容稍后接入。"
@@ -50,7 +55,7 @@
     "description": "在此管理应用程序的设置和偏好。",
     "nav": {
       "groupSettings": "设置",
-      "groupMuse": "灵感",
+      "groupData": "数据",
       "groupOther": "其他",
       "general": "通用",
       "backup": "数据与备份",
@@ -65,9 +70,9 @@
       "themeDesc": "选择应用程序的主题。"
     },
     "about": {
-      "title": "拾序 OS / Muse 灵感",
+      "title": "拾序",
       "version": "版本 {version}",
-      "copyright": "© 拾序 OS. All rights reserved."
+      "copyright": "© 拾序. All rights reserved."
     },
     "theme": {
       "label": "主题",
@@ -75,10 +80,6 @@
       "light": "浅色",
       "dark": "深色",
       "system": "系统"
-    },
-    "muse": {
-      "label": "灵感库",
-      "description": "标签、项目与本地备份。"
     }
   },
   "muse": {
@@ -207,7 +208,7 @@
     },
     "manage": {
       "open": "管理与数据",
-      "title": "灵感库管理",
+      "title": "数据管理",
       "close": "关闭",
       "save": "保存",
       "delete": "删除",
@@ -219,7 +220,7 @@
         "backup": "备份"
       },
       "tags": {
-        "hint": "单击名称改名；可合并、着色。删除标签不会删除灵感。",
+        "hint": "单击名称改名；可合并、着色。删除标签不会删除关联内容。",
         "rename": "改名",
         "renameHint": "单击改名，失焦保存",
         "merge": "合并",
@@ -228,14 +229,14 @@
         "pickColor": "点击色点弹出调色板",
         "confirmMerge": "确认合并",
         "deleteTitle": "删除标签",
-        "confirmDelete": "确定删除该标签？关联灵感会解除绑定，但正文保留。"
+        "confirmDelete": "确定删除该标签？关联内容会解除绑定，但正文保留。"
       },
       "projects": {
-        "hint": "单击名称可改名；可调整状态与颜色。有灵感关联时不能删除。",
+        "hint": "单击名称可改名；可调整状态与颜色。仍有关联内容时不能删除。",
         "newPlaceholder": "新项目名称",
         "create": "新建",
-        "stats": "{notes} 条 · {done} 已输出",
-        "deleteBlocked": "仍有灵感关联，无法删除",
+        "stats": "{notes} 条 · {done} 已完成",
+        "deleteBlocked": "仍有关联内容，无法删除",
         "deleteTitle": "删除项目",
         "confirmDelete": "确定删除该项目？此操作不可恢复。",
         "statusLabel": "项目状态",
@@ -247,7 +248,7 @@
         }
       },
       "trash": {
-        "hint": "已删除灵感保留 30 天，可恢复或彻底清空。",
+        "hint": "已删除内容保留 30 天，可恢复或彻底清空。",
         "empty": "清空回收站",
         "emptyState": "回收站是空的",
         "deletedAt": "{time} 删除",
@@ -255,10 +256,10 @@
         "restore": "恢复",
         "purge": "彻底删除",
         "confirmEmpty": "确定清空回收站？所有条目将被永久删除。",
-        "confirmPurge": "确定彻底删除这条灵感？此操作不可恢复。"
+        "confirmPurge": "确定彻底删除这条内容？此操作不可恢复。"
       },
       "backup": {
-        "hint": "把灵感库完整备份到本地文件，之后可随时从备份恢复。",
+        "hint": "把应用数据完整备份到本地文件，之后可随时从备份恢复。",
         "manual": "立即备份",
         "restoreFile": "从文件恢复…",
         "autoHint": "每次启动会自动备份，并保留最近 7 份。",
@@ -285,6 +286,9 @@
   },
   "todo": {
     "title": "待办",
+    "count": "{count} 条",
+    "createdAt": "{time}创建",
+    "emptyHint": "按 {shortcut} 记下第一件待办",
     "add": "添加",
     "createPlaceholder": "写下要做的事，回车添加",
     "loading": "加载中…",
@@ -309,9 +313,18 @@
       "tags": "标签",
       "subtasks": "子待办"
     },
+    "dueQuick": {
+      "today": "今天",
+      "tomorrow": "明天",
+      "dayAfter": "后天",
+      "nextWeek": "下周",
+      "clear": "清除"
+    },
     "searchPlaceholder": "搜索标题或描述…",
     "noProject": "无项目",
-    "tagPlaceholder": "输入标签，回车添加",
+    "addTag": "+ 添加",
+    "removeTag": "移除标签",
+    "tagPlaceholder": "标签名",
     "status": {
       "todo": "待办",
       "doing": "进行中",
@@ -337,6 +350,7 @@
     "export": "导出 JSON",
     "capture": {
       "title": "快速添加",
+      "button": "收集待办",
       "hint": "回车保存 · Esc 关闭",
       "placeholder": "明天 18:00 提交周报 {hash}工作 {at}项目 ！高",
       "insertTag": "插入标签",

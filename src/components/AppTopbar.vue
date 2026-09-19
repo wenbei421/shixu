@@ -23,12 +23,6 @@ const { t } = useI18n()
     </div>
 
     <div class="flex min-w-0 flex-1 items-center gap-2" data-tauri-drag-region>
-      <div
-        class="bg-primary text-primary-foreground flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
-        aria-hidden="true"
-      >
-        序
-      </div>
       <span class="hidden truncate text-sm font-semibold sm:inline">{{ t('brand.name') }}</span>
     </div>
 

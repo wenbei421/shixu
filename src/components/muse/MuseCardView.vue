@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import { highlightSegments } from '@/lib/muse-format'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
@@ -14,10 +15,10 @@ const store = useMuseStore()
       v-for="note in store.visibleNotes"
       :key="note.id"
       :class="cn(
-        'bg-card cursor-pointer rounded-lg border px-3.5 py-3 transition-colors',
+        'bg-card cursor-pointer rounded-lg border border-border px-3.5 py-3 transition-colors',
         note.id === store.selectedId
-          ? 'border-primary ring-primary/15 ring-3'
-          : 'border-border hover:border-muted-foreground/40',
+          ? 'border-primary bg-accent'
+          : 'hover:bg-accent/70',
       )"
       @click="store.select(note.id)"
     >
@@ -45,6 +46,7 @@ const store = useMuseStore()
           @{{ note.projectName }}
         </span>
         <MuseStatusBadge :status="note.status" />
+        <OutOfFilterHint v-if="store.retainedId === note.id" />
         <MuseSourceStamp class="ml-auto" :source="note.source" :timestamp="note.createdAt" />
       </div>
     </article>

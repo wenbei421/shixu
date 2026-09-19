@@ -57,7 +57,7 @@ const navGroups = computed<NavGroup[]>(() => [
     ],
   },
   {
-    labelKey: 'settings.nav.groupMuse',
+    labelKey: 'settings.nav.groupData',
     items: [
       { id: 'tags', icon: Tags, labelKey: 'settings.nav.tags' },
       { id: 'projects', icon: FolderKanban, labelKey: 'settings.nav.projects' },
@@ -180,7 +180,7 @@ function handleLanguageSelect(newLocale: string) {
           </div>
         </div>
 
-        <!-- Muse sections -->
+        <!-- Shared data: tags / projects / backup -->
         <div v-else-if="museSection" class="w-full">
           <MuseManagePanel :section="museSection" />
         </div>

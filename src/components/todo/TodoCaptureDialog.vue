@@ -2,6 +2,7 @@
 import { AtSign, Hash, Zap } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatDateTimeSeconds } from '@/lib/datetime'
 import { createProject } from '@/lib/muse'
 import { parseTodoInput } from '@/lib/todo-parse'
 import { useTodoStore } from '@/stores/todo'
@@ -144,7 +145,7 @@ async function save() {
           <div class="text-muted-foreground flex flex-wrap gap-2 text-[11px]">
             <span v-if="preview.dueAt">
               {{ t('todo.fields.due') }}:
-              {{ new Date(preview.dueAt).toLocaleString() }}
+              {{ formatDateTimeSeconds(preview.dueAt) }}
             </span>
             <span v-if="preview.priority !== 'none'">
               {{ t('todo.fields.priority') }}: {{ t(`todo.priority.${preview.priority}`) }}

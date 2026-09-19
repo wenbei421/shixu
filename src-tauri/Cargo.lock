@@ -4296,7 +4296,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "shixu-os"
+name = "shixu"
 version = "0.18.0"
 dependencies = [
  "fix-path-env",

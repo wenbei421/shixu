@@ -45,6 +45,7 @@ import {
   updateTagColor,
 } from '@/lib/muse'
 import { shuffleBySalt } from '@/lib/muse-format'
+import { retainItem } from '@/lib/retain-list'
 
 /** 搜索防抖窗口（FR-07.2） */
 const SEARCH_DEBOUNCE = 150
@@ -67,6 +68,8 @@ export const useMuseStore = defineStore('muse', () => {
   const statusFilter = ref<NoteStatus | 'all'>('all')
   const view = ref<ViewMode>('card')
   const selectedId = ref<string | null>(null)
+  /** 状态改完后已不符合当前筛选，仍留在列表里的那条 */
+  const retainedId = ref<string | null>(null)
   /** 回顾视图的洗牌种子 */
   const reviewSalt = ref(0)
 
@@ -95,7 +98,15 @@ export const useMuseStore = defineStore('muse', () => {
     error.value = e instanceof Error ? e.message : String(e)
   }
 
-  async function refreshNotes() {
+  function releaseRetained() {
+    const id = retainedId.value
+    if (!id)
+      return
+    retainedId.value = null
+    notes.value = notes.value.filter(note => note.id !== id)
+  }
+
+  async function refreshNotes(options?: { keep?: Note, keepIndex?: number }) {
     loading.value = true
     error.value = ''
     try {
@@ -106,14 +117,24 @@ export const useMuseStore = defineStore('muse', () => {
           ? items.filter(n => n.content.toLowerCase().includes(keyword))
           : items
         trash.value = items
+        retainedId.value = null
       }
       else {
-        notes.value = await listNotes({
+        let next = await listNotes({
           kind: filter.value.kind,
           value: filter.value.value,
           status: statusChipsVisible.value ? statusFilter.value : 'all',
           keyword: search.value.trim() || undefined,
         })
+        if (options?.keep) {
+          const held = retainItem(next, options.keep, options.keepIndex ?? -1)
+          next = held.items
+          retainedId.value = held.retained ? options.keep.id : null
+        }
+        else {
+          retainedId.value = null
+        }
+        notes.value = next
       }
 
       // 选中项被筛掉时回落到首条，保证详情栏始终有内容（原型 renderList）
@@ -154,6 +175,8 @@ export const useMuseStore = defineStore('muse', () => {
   }
 
   async function select(id: string | null) {
+    if (retainedId.value && retainedId.value !== id)
+      releaseRetained()
     selectedId.value = id
     related.value = []
     if (!id)
@@ -191,13 +214,20 @@ export const useMuseStore = defineStore('muse', () => {
   }
 
   function setView(value: ViewMode) {
+    if (value !== view.value)
+      releaseRetained()
     view.value = value
   }
 
   /** 写操作统一走这里：落库后重拉列表与左栏计数，失败冒泡给调用方提示 */
   async function applyMutation(mutate: () => Promise<Note>) {
     const updated = await mutate()
-    await Promise.all([refreshNotes(), refreshSidebar()])
+    const keep = retainedId.value === updated.id
+    const index = notes.value.findIndex(note => note.id === updated.id)
+    await Promise.all([
+      refreshNotes(keep ? { keep: updated, keepIndex: index } : undefined),
+      refreshSidebar(),
+    ])
     return updated
   }
 
@@ -218,8 +248,14 @@ export const useMuseStore = defineStore('muse', () => {
     return applyMutation(() => updateNoteContent(id, content))
   }
 
-  function setStatus(id: string, status: NoteStatus) {
-    return applyMutation(() => updateNoteStatus(id, status))
+  async function setStatus(id: string, status: NoteStatus) {
+    const index = notes.value.findIndex(note => note.id === id)
+    const updated = await updateNoteStatus(id, status)
+    await Promise.all([
+      refreshNotes({ keep: updated, keepIndex: index }),
+      refreshSidebar(),
+    ])
+    return updated
   }
 
   function setProject(id: string, project: string | null) {
@@ -239,6 +275,8 @@ export const useMuseStore = defineStore('muse', () => {
   }
 
   function setArchived(id: string, archived: boolean) {
+    if (retainedId.value === id)
+      retainedId.value = null
     return applyMutation(() => (archived ? archiveNote(id) : unarchiveNote(id)))
   }
 
@@ -328,6 +366,7 @@ export const useMuseStore = defineStore('muse', () => {
     statusFilter,
     view,
     selectedId,
+    retainedId,
     loading,
     error,
     statusChipsVisible,

@@ -1,7 +1,10 @@
 {
   "brand": {
-    "name": "拾序 OS",
-    "english": "SHIXU OS"
+    "name": "拾序",
+    "english": "SHIXU"
+  },
+  "common": {
+    "outOfFilter": "Ya no coincide con este filtro"
   },
   "nav": {
     "home": "Resumen",
@@ -28,13 +31,15 @@
     "localOnly": "Solo local"
   },
   "statusbar": {
-    "contextIdle": "Context Engine en espera",
-    "active": "Activo",
-    "focus": "Enfoque",
     "fragments": "{count} fragmentos",
     "sqliteReady": "SQLite listo",
     "sqliteOffline": "SQLite desconectado",
-    "aiIdle": "AI Core desconectado"
+    "sqliteOpenDir": "Abrir carpeta de datos",
+    "sqliteTooltip": "{dbPath}\nPulsa para abrir la carpeta de datos",
+    "version": "v{version}",
+    "versionTooltip": "Versión actual {version}",
+    "clockTooltip": "{datetime}",
+    "routeTooltip": "Ruta actual: {path}"
   },
   "pages": {
     "placeholder": "El esqueleto de {name} está listo. El contenido se conectará después."
@@ -50,7 +55,7 @@
     "description": "Administra las configuraciones y preferencias de la aplicación aquí.",
     "nav": {
       "groupSettings": "Ajustes",
-      "groupMuse": "Muse",
+      "groupData": "Datos",
       "groupOther": "Otros",
       "general": "General",
       "backup": "Datos y copia",
@@ -65,9 +70,9 @@
       "themeDesc": "Elige el tema para la aplicación."
     },
     "about": {
-      "title": "拾序 OS / Muse inspiración",
+      "title": "拾序",
       "version": "Versión {version}",
-      "copyright": "© 拾序 OS. Todos los derechos reservados."
+      "copyright": "© 拾序. Todos los derechos reservados."
     },
     "theme": {
       "label": "Tema",
@@ -75,10 +80,6 @@
       "light": "Claro",
       "dark": "Oscuro",
       "system": "Sistema"
-    },
-    "muse": {
-      "label": "Muse",
-      "description": "Etiquetas, proyectos y copias locales."
     }
   },
   "muse": {
@@ -207,7 +208,7 @@
     },
     "manage": {
       "open": "Gestionar y datos",
-      "title": "Gestión de Muse",
+      "title": "Gestión de datos",
       "close": "Cerrar",
       "save": "Guardar",
       "delete": "Eliminar",
@@ -219,7 +220,7 @@
         "backup": "Copia"
       },
       "tags": {
-        "hint": "Haz clic en el nombre para renombrar; fusionar o recolorear. Borrar una etiqueta no borra las ideas.",
+        "hint": "Haz clic en el nombre para renombrar; fusionar o recolorear. Borrar una etiqueta no borra los elementos vinculados.",
         "rename": "Renombrar",
         "renameHint": "Clic para renombrar, pierde el foco para guardar",
         "merge": "Fusionar",
@@ -228,14 +229,14 @@
         "pickColor": "Haz clic en el punto para abrir la paleta",
         "confirmMerge": "Confirmar fusión",
         "deleteTitle": "Eliminar etiqueta",
-        "confirmDelete": "¿Eliminar esta etiqueta? Las ideas se conservan; solo se quita el vínculo."
+        "confirmDelete": "¿Eliminar esta etiqueta? Los elementos se conservan; solo se quita el vínculo."
       },
       "projects": {
-        "hint": "Haz clic en el nombre para renombrar; ajusta estado y color. No se puede borrar si hay ideas vinculadas.",
+        "hint": "Haz clic en el nombre para renombrar; ajusta estado y color. No se puede borrar si hay elementos vinculados.",
         "newPlaceholder": "Nombre del proyecto",
         "create": "Crear",
-        "stats": "{notes} notas · {done} publicadas",
-        "deleteBlocked": "Aún tiene ideas vinculadas",
+        "stats": "{notes} elementos · {done} hechos",
+        "deleteBlocked": "Aún tiene elementos vinculados",
         "deleteTitle": "Eliminar proyecto",
         "confirmDelete": "¿Eliminar este proyecto? No se puede deshacer.",
         "statusLabel": "Estado del proyecto",
@@ -247,7 +248,7 @@
         }
       },
       "trash": {
-        "hint": "Las ideas eliminadas se conservan 30 días. Restaura o bórralas para siempre.",
+        "hint": "Los elementos eliminados se conservan 30 días. Restaura o bórralos para siempre.",
         "empty": "Vaciar papelera",
         "emptyState": "La papelera está vacía",
         "deletedAt": "Eliminada {time}",
@@ -255,10 +256,10 @@
         "restore": "Restaurar",
         "purge": "Borrar para siempre",
         "confirmEmpty": "¿Vaciar la papelera? Todo se eliminará permanentemente.",
-        "confirmPurge": "¿Borrar esta idea para siempre? No se puede deshacer."
+        "confirmPurge": "¿Borrar este elemento para siempre? No se puede deshacer."
       },
       "backup": {
-        "hint": "Guarda una copia local completa de Muse. Podrás restaurarla más tarde.",
+        "hint": "Guarda una copia local completa de los datos de la app. Podrás restaurarla más tarde.",
         "manual": "Respaldar ahora",
         "restoreFile": "Restaurar desde archivo…",
         "autoHint": "Cada arranque hace una copia automática; se conservan las 7 últimas.",
@@ -285,6 +286,9 @@
   },
   "todo": {
     "title": "Todo",
+    "count": "{count} tareas",
+    "createdAt": "Creado {time}",
+    "emptyHint": "Pulsa {shortcut} para anotar tu primera tarea",
     "add": "Add",
     "createPlaceholder": "Write a task and press Enter",
     "loading": "Loading…",
@@ -309,9 +313,18 @@
       "tags": "Tags",
       "subtasks": "Subtasks"
     },
+    "dueQuick": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "dayAfter": "Pasado mañana",
+      "nextWeek": "Próxima semana",
+      "clear": "Borrar"
+    },
     "searchPlaceholder": "Search title or description…",
     "noProject": "No project",
-    "tagPlaceholder": "Type a tag and press Enter",
+    "addTag": "+ Añadir",
+    "removeTag": "Quitar etiqueta",
+    "tagPlaceholder": "Nombre de etiqueta",
     "status": {
       "todo": "Todo",
       "doing": "Doing",
@@ -336,6 +349,7 @@
     "export": "Export JSON",
     "capture": {
       "title": "Quick add",
+      "button": "Recolectar tarea",
       "hint": "Enter to save · Esc to close",
       "placeholder": "Tomorrow 18:00 ship report {'#'}work {'@'}project !high",
       "insertTag": "Insert tag",
