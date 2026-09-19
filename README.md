@@ -48,15 +48,18 @@
 
 ### _Light mode dashboard view_
 
-![Light Mode Dashboard](./docs/images/light-mode-dashboard.png)
+![1789822426040](image/README/1789822426040.png)
+![1789822762820](image/README/1789822762820.png)
 
 ### _Dark mode settings view_
 
-![Dark Mode Settings](./docs/images/dark-mode-settings.png)
+![1789822501570](image/README/1789822501570.png)
+![1789822722179](image/README/1789822722179.png)
 
 ### _Language support view_
 
-![Language Support](./docs/images/language-support.png)
+![1789822538419](image/README/1789822538419.png)
+![1789822618234](image/README/1789822618234.png)
 
 ## Recommended IDE Setup
 
