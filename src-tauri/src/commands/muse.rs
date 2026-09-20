@@ -844,6 +844,8 @@ pub async fn delete_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<()
     if res.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("note {id}")));
     }
+    crate::commands::attachments::soft_delete_owner_attachments(&db.pool, "muse", note_id, now)
+        .await?;
     Ok(())
 }
 
@@ -976,6 +978,7 @@ pub async fn restore_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<N
     if res.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("note {id}")));
     }
+    crate::commands::attachments::restore_owner_attachments(&db.pool, "muse", note_id).await?;
     fetch_note(&mut conn, note_id).await
 }
 
@@ -983,6 +986,14 @@ pub async fn restore_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<N
 #[tauri::command]
 pub async fn purge_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<(), AppError> {
     let note_id = id::parse_id(&id)?;
+    let app_data = db
+        .path
+        .parent()
+        .ok_or_else(|| AppError::Invalid("db parent".into()))?;
+    crate::commands::attachments::hard_delete_owner_attachments(
+        &db.pool, app_data, "muse", note_id,
+    )
+    .await?;
     let res = sqlx::query("DELETE FROM muse_notes WHERE id = ? AND deleted_at IS NOT NULL")
         .bind(note_id)
         .execute(&db.pool)
@@ -996,6 +1007,20 @@ pub async fn purge_muse_note(db: tauri::State<'_, Db>, id: String) -> Result<(),
 /// 清空回收站
 #[tauri::command]
 pub async fn empty_muse_trash(db: tauri::State<'_, Db>) -> Result<u64, AppError> {
+    let app_data = db
+        .path
+        .parent()
+        .ok_or_else(|| AppError::Invalid("db parent".into()))?;
+    let ids: Vec<(i64,)> =
+        sqlx::query_as("SELECT id FROM muse_notes WHERE deleted_at IS NOT NULL")
+            .fetch_all(&db.pool)
+            .await?;
+    for (note_id,) in &ids {
+        crate::commands::attachments::hard_delete_owner_attachments(
+            &db.pool, app_data, "muse", *note_id,
+        )
+        .await?;
+    }
     let res = sqlx::query("DELETE FROM muse_notes WHERE deleted_at IS NOT NULL")
         .execute(&db.pool)
         .await?;
@@ -1006,6 +1031,22 @@ pub async fn empty_muse_trash(db: tauri::State<'_, Db>) -> Result<u64, AppError>
 #[tauri::command]
 pub async fn purge_expired_muse_notes(db: tauri::State<'_, Db>) -> Result<u64, AppError> {
     let cutoff = now_ms().saturating_sub(TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    let app_data = db
+        .path
+        .parent()
+        .ok_or_else(|| AppError::Invalid("db parent".into()))?;
+    let ids: Vec<(i64,)> = sqlx::query_as(
+        "SELECT id FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?",
+    )
+    .bind(cutoff)
+    .fetch_all(&db.pool)
+    .await?;
+    for (note_id,) in &ids {
+        crate::commands::attachments::hard_delete_owner_attachments(
+            &db.pool, app_data, "muse", *note_id,
+        )
+        .await?;
+    }
     let res = sqlx::query("DELETE FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?")
         .bind(cutoff)
         .execute(&db.pool)
@@ -1327,6 +1368,43 @@ async fn vacuum_into(db: &Db, dest: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
+fn copy_dir_recursive(src: &Path, dest: &Path) -> Result<(), AppError> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let from = entry.path();
+        let to = dest.join(entry.file_name());
+        if ty.is_dir() {
+            copy_dir_recursive(&from, &to)?;
+        } else if ty.is_file() {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    Ok(())
+}
+
+/// 将 attachments/ 拷到与 .db 同级的 `{stem}_attachments/`
+fn copy_attachments_sidecar(app_data: &Path, backup_db_path: &Path) -> Result<(), AppError> {
+    let src = sqlite::attachments_dir(app_data);
+    if !src.exists() {
+        return Ok(());
+    }
+    let stem = backup_db_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("backup");
+    let dest = backup_db_path
+        .parent()
+        .unwrap_or(Path::new("."))
+        .join(format!("{stem}_attachments"));
+    if dest.exists() {
+        std::fs::remove_dir_all(&dest)?;
+    }
+    copy_dir_recursive(&src, &dest)?;
+    Ok(())
+}
+
 fn prune_auto_backups(dir: &Path, keep: usize) -> Result<(), AppError> {
     let mut entries: Vec<_> = std::fs::read_dir(dir)?
         .filter_map(|e| e.ok())
@@ -1340,7 +1418,18 @@ fn prune_auto_backups(dir: &Path, keep: usize) -> Result<(), AppError> {
 
     entries.sort_by_key(|e| std::cmp::Reverse(file_mtime_ms(&e.path())));
     for entry in entries.into_iter().skip(keep) {
-        let _ = std::fs::remove_file(entry.path());
+        let path = entry.path();
+        let _ = std::fs::remove_file(&path);
+        // 同步删 sidecar
+        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+            let sidecar = path
+                .parent()
+                .unwrap_or(Path::new("."))
+                .join(format!("{stem}_attachments"));
+            if sidecar.exists() {
+                let _ = std::fs::remove_dir_all(sidecar);
+            }
+        }
     }
     Ok(())
 }
@@ -1363,6 +1452,8 @@ pub async fn backup_muse_db(
     };
 
     vacuum_into(&db, &dest).await?;
+    let app_data = app.path().app_data_dir()?;
+    copy_attachments_sidecar(&app_data, &dest)?;
     Ok(dest.display().to_string())
 }
 
@@ -1378,6 +1469,7 @@ pub async fn auto_backup_muse_db(
     let stamp = now_ms();
     let dest = dir.join(format!("muse_auto_{stamp}.db"));
     vacuum_into(&db, &dest).await?;
+    copy_attachments_sidecar(&app_data, &dest)?;
     prune_auto_backups(&dir, AUTO_BACKUP_KEEP)?;
     Ok(dest.display().to_string())
 }
@@ -1446,6 +1538,22 @@ pub async fn restore_muse_db(app: tauri::AppHandle, path: String) -> Result<(), 
         std::fs::remove_file(&pending)?;
     }
     std::fs::copy(&src, &pending)?;
+
+    let stem = src
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("backup");
+    let sidecar = src
+        .parent()
+        .unwrap_or(Path::new("."))
+        .join(format!("{stem}_attachments"));
+    let pending_att = sqlite::pending_attachments_path(&app_data);
+    if pending_att.exists() {
+        std::fs::remove_dir_all(&pending_att)?;
+    }
+    if sidecar.exists() {
+        copy_dir_recursive(&sidecar, &pending_att)?;
+    }
     Ok(())
 }
 
@@ -1533,9 +1641,22 @@ pub async fn run_muse_startup_maintenance(app: tauri::AppHandle) -> Result<(), A
     let stamp = now_ms();
     let dest = dir.join(format!("muse_auto_{stamp}.db"));
     vacuum_into(&db, &dest).await?;
+    copy_attachments_sidecar(&app_data, &dest)?;
     prune_auto_backups(&dir, AUTO_BACKUP_KEEP)?;
 
     let cutoff = now_ms().saturating_sub(TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    let ids: Vec<(i64,)> = sqlx::query_as(
+        "SELECT id FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?",
+    )
+    .bind(cutoff)
+    .fetch_all(&db.pool)
+    .await?;
+    for (note_id,) in &ids {
+        crate::commands::attachments::hard_delete_owner_attachments(
+            &db.pool, &app_data, "muse", *note_id,
+        )
+        .await?;
+    }
     let purged =
         sqlx::query("DELETE FROM muse_notes WHERE deleted_at IS NOT NULL AND deleted_at < ?")
             .bind(cutoff)
