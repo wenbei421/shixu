@@ -109,6 +109,7 @@ function priorityCount(priority: TodoPriority | 'all') {
 }
 
 onMounted(() => {
+  void store.refreshProjects()
   void store.refresh()
   window.addEventListener('keydown', onPageKeydown)
 })
