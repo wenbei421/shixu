@@ -1,0 +1,257 @@
+# ci.yml — dsh-webcode-bridge 的主闸门（push / PR / 手动）。
+#
+# ## 这个工作流刻意只跑「不需要真机」的部分
+#
+# 本项目的验收面分成两层，`doc/verify.md` 与 `doc/comment-style.md` §9 把它们分得很清楚：
+#
+#   · **离线层**（本工作流）：解析、块协议、会话游标、设置、多站点解码器、基准 harness 的
+#     离线回放、生成物卫生。这些用构造的 chunk 流与 mock 站点跑，**不联网、不碰真机、不启动
+#     浏览器**（§9.1 第 5 条「默认离线」）。
+#   · **真机层**（不在本工作流）：`test-mock/real-*.mjs` 与 `npm run doctor`。它们需要一台
+#     **已登录的 Edge profile**，并且会真实敲 DeepSeek/GLM/Kimi 等站点。CI runner 既没有那份
+#     登录态，也不该替用户去敲——§9.1 第 5 条写明 `--live` 必须显式批准，风控纪律是
+#     「串行 / 每变体 ≤3 次 / 间隔 ≥20s」（依据 `doc/bridge-failure-ledger.md` §3 的 0.14.3
+#     事故）。因此真机验收走人按发版节奏跑的 `doc/verify.md` 矩阵，而不是这里。
+#
+# ## 两个必须写下来的环境事实（本地实测，不是推测）
+#
+# 1. **不能用 `--frozen-lockfile`**：`package/dsh-webcode-bridge/pnpm-lock.yaml` 虽然**已入库**，
+#    但它已**过期**——`pnpm install --frozen-lockfile` 实测退出 1：
+#      ERR_PNPM_OUTDATED_LOCKFILE ... The importer resolution is broken at dependency
+#      "@deepseek-ai/dsh-client-ui-sidebar-right": version "0.1.5-alpha.1" doesn't satisfy range "*"
+#    根因是 `peerDependenciesMeta` 把该 peer 标成 optional、而 lockfile 的 importer 段仍要求
+#    满足 `*`。而 `pnpm install --no-frozen-lockfile` 实测退出 0，且**不改写 lockfile**
+#    （sha256 前后一致）。所以这里用 `--no-frozen-lockfile`，并加 `--prefer-offline` 减少抖动。
+#    这不是「绕过校验」：该 lockfile 对干净安装本就不成立，冻住它只会让 CI 恒红。
+#
+# 2. **Node 20 这条腿跑不起来，而且失败与测试无关**：本工作流曾把 Node 20 放进矩阵，
+#    依据是 `engines.node` 当时写着 `>=20`。但 `package.json` 的 `packageManager` 钉的是
+#    `pnpm@11.25.0`，而这一版 pnpm **要求 Node ≥22.13**。CI 实测（run 35137367183）：
+#
+#      warn: This version of pnpm requires at least Node.js v22.13
+#      Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite
+#      Process completed with exit code 1.
+#
+#    失败发生在 `pnpm install` 这一步——**任何一条测试都还没跑**。所以那不是「Node 20 上
+#    有回归」，而是两处版本声明（`engines.node` 与 `packageManager`）本身互相矛盾，
+#    而陈旧的矩阵照着错的那一半去搭。它同时解释了为什么四条腿里有两条在**第 5 步**
+#    就红了，而另外两条能一路跑到闸门脚本：唯一变量就是这个 Node 版本。
+#
+#    修法是让三者对齐到同一个事实：`engines.node` = `>=22.13`、矩阵 = `[22, 24]`、
+#    不再有「Node 20 专用命令」。矩阵仍同时覆盖**最低声明版本**（22）与开发机当前版本（24）：
+#    只测 24 会放过「在声明支持的最低版本上根本跑不起来」这类回归——而那正是本项目
+#    最想避免的一类「本地绿、用户红」。
+#
+#    顺带删掉了原来的「Node 20 用 bash 展开 glob」分流。`node --test` 的 glob 支持是
+#    Node 21 才加入的（PR nodejs/node#47653），22 上原生可用：两条腿现在跑**同一条**
+#    `pnpm test`，「两条腿跑的到底是不是同一件事」不再需要靠人对照两段命令。
+#
+#    这一类矛盾现在有机器判据：`scripts/check-repo-hygiene.mjs` 的判据 C 直接比对
+#    ci.yml 的 Node 矩阵与 `engines.node`，矩阵里出现低于最低声明版本的大版本就红。
+#    （写下这条闸门的原因就是本次事故：`engines` 从 >=20 改成 >=22 时，没人去改矩阵。）
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上的旧运行被新推送取代后立即取消：省 runner，也避免旧结论贴在新的 commit 上。
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # 包目录：所有 npm 脚本、test-mock 探针都相对它。
+  PKG_DIR: package/dsh-webcode-bridge
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    # 本机 `pnpm test` 实测 564s（9.4 分钟，2026-09-15）。CI 冷缓存 + 两平台差异留足余量。
+    timeout-minutes: 45
+    strategy:
+      # 不要 fail-fast：一个平台的失败会掩盖另一个平台的失败，而两平台失败的**原因通常不同**。
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # 最低声明版本 + 开发机当前版本（见文件头事实 2）。不要在这里写低于
+        # `engines.node` 的大版本：`pnpm install` 会先红，测试根本没机会跑。
+        node: [22, 24]
+
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      # 版本取自 package/dsh-webcode-bridge/package.json 的 packageManager 字段
+      # （`pnpm@11.25.0+sha512...`）。显式写版本而不是让它自动探测：仓库根没有 package.json，
+      # 自动探测会落空。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: 安装 Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # 见文件头事实 1：lockfile 存在但已过期，`--frozen-lockfile` 实测退出 1。
+      - name: 安装依赖（--no-frozen-lockfile，理由见文件头）
+        working-directory: ${{ env.PKG_DIR }}
+        run: pnpm install --no-frozen-lockfile --prefer-offline
+
+      # 注释纪律闸门。**已转为阻断**（2026-09-15，0.15.2）。
+      #
+      # 历史：接入时基线未清（19 个 error：CS001 1 个、CS002 5 个、CS003 13 个），
+      # 因此先以 `continue-on-error` 非阻断接入，好让每条 PR 都能看到欠账是增是减。
+      # 那一步的前提是「基线清完后删掉 continue-on-error」——现在前提已满足：
+      #   · CS003 的 13 个是 JSDoc 缺口，已补齐；
+      #   · CS002 的 5 个是**闸门自身的判据 bug**：它按整行扫源码，于是
+      #     `const MARKER_RE = /\b(TODO|FIXME|XXX|HACK)\b/;` 这种**正则字面量**
+      #     里的 TODO 被当成待办注释。已改为先用状态机抽出真正的注释文本再判，
+      #     规则仍然抓得住裸 `TODO`（改动时用「种一条 // TODO fix this later，
+      #     确认报错后再撤回」的方式验证过它没有变空）。
+      #   · CS005 的 4 个 WARN 是散文误报，判据已收紧（要求赋值/调用形态 + CJK 占比）。
+      # 实测 `node scripts/lint-comments.mjs` 现在 error 0 / warn 0、退出码 0。
+      #
+      # 留 `continue-on-error` 长期不动 = 这道闸门等于不存在（这正是它自己注释里
+      # 写下的判据），所以这一行被删掉了。若将来又要临时放行，必须同时写下
+      # 「什么条件下撤回」——否则它会永久留在那里。
+      - name: 注释纪律（scripts/lint-comments.mjs，阻断）
+        run: node scripts/lint-comments.mjs
+
+      # ---- 台账一致性（阻断）----
+      #
+      # `doc/progress.md` 自己定的约定是「每完成一项即更新这里」，而这条约定**已经失败三次**
+      # （doc/long-term-issues.md §2.3 抓到过一次，2026-09-16 的状态复核又抓到一次；后者那次
+      # 是「当前状态」表四行全过期 + 两轮工作整段没有台账）。靠自觉失败三次之后，
+      # 正确的反应不是「下次注意」，而是把**机器可判的那两格**（版本号、测试文件数）
+      # 从事实来源现读并与台账逐字比对，不一致就红。
+      #
+      # 为什么放在这里而不是塞进 `pnpm test`：这两件事的性质不同。`pnpm test` 验的是
+      # **代码**，本步验的是**记录**。混在一起会让「台账过期」表现为「单测失败」，
+      # 定位成本立刻上升——而本项目对失败信息的要求是「一眼看出是谁的错」。
+      - name: 台账一致性（scripts/check-ledger.mjs，阻断）
+        run: node scripts/check-ledger.mjs
+
+      # ---- 文件规范：编码（无 BOM）+ doc/README.md 索引无死链（阻断）----
+      #
+      # 这两条都是**已经写在文档里、但此前没有任何机器检查**的规范，于是都发生过
+      # 「文档说做完了、磁盘上只做了一半」：
+      #   · 去 BOM：0.15.5 只改了 package.json，`doc/security-review.md` 一直带 BOM
+      #     直到 2026-09-16 才发现（doc/long-term-issues.md #20 原话「只剩这一个」）。
+      #   · 文档索引：CONTRIBUTING §5.2 与 PR 模板都要求「链接 Test-Path 通过」，
+      #     却从来没人跑过它——而索引正是「文档在哪」的唯一入口，死链等于把文档摘掉。
+      # 判据与反例见 scripts/check-repo-hygiene.mjs 文件头。
+      - name: 文件规范（scripts/check-repo-hygiene.mjs，阻断）
+        run: node scripts/check-repo-hygiene.mjs
+
+      # ---- reference/ 的来源表与磁盘一致（阻断）----
+      #
+      # `reference/` 的约定是「第三方克隆不入库，只把来源与版本入库」
+      # （reference/README.md）。既然内容不入库，**「怎么拿回来」就必须入库**——
+      # 而这正是此前缺的那一半：实测 35 个克隆里只有 1 个 remote URL 被记录过、
+      # HEAD SHA 一个都没记，等于这个目录一旦丢失就不可复现。
+      #
+      # 本步校验 reference/README.md 的那张表仍与磁盘一致（脚本纯 fs 读各克隆的
+      # `.git/config` 与 HEAD，不 spawn git——理由同下一条）。
+      # `reference/` 不在本机时（全新克隆）脚本会因读不到目录而报错退 2，这是**正确**的：
+      # 它提醒你 reference/README.md 已经无法被验证，而不是假装通过。
+      - name: reference 来源表一致（scripts/gen-reference-index.mjs --check，阻断）
+        run: node scripts/gen-reference-index.mjs --check
+
+      # ---- 提交信息规范（阻断）----
+      #
+      # 本仓库事实上一直按 Conventional Commits 写（实测最近 200 条全部合规），
+      # 但这条约定**此前既没写进 CONTRIBUTING，也没有闸门**——健康的历史一旦掺进
+      # 一条 `update stuff`，要么被无声接受、要么在评审里争论一次。现已写进
+      # CONTRIBUTING §9，并由这一步阻断。
+      #
+      # 为什么由 shell 把 `git log` 管道进来、而不是让脚本自己 spawn git：
+      # 本机实测 Node 里 spawnSync 调外部程序一律 EPERM（见文件头与 doc/progress.md），
+      # 脚本自己调 git 会让它在开发者本机**空转**——而空转的闸门比没有闸门更坏。
+      # 这里只跑 push 范围（push 用 before..after，PR 用 base..head），避免每次
+      # 都把全历史重扫一遍；`--stdin` 是**一行一条主题**的模式（见该脚本 checkMany）。
+      - name: 提交信息规范（scripts/check-commit-msg.mjs，阻断）
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          else
+            RANGE=""
+          fi
+          if [ -n "$RANGE" ] && git rev-parse --quiet --verify "$RANGE" >/dev/null 2>&1; then
+            echo "检查范围：$RANGE"
+            git log --format="%s" "$RANGE" | node scripts/check-commit-msg.mjs --stdin
+          else
+            echo "无可用范围（首次推送或 range 不可解析），回退为检查最近 1 条：${{ github.sha }}"
+            git log --format="%s" -1 "${{ github.sha }}" | node scripts/check-commit-msg.mjs --stdin
+          fi
+
+      # ---- 全量单测：两条腿跑同一条命令 ----
+      #
+      # 这里曾经按 Node 版本分流成两段（Node 20 那条腿改用 bash 展开 glob）。分流已删，
+      # 理由见文件头事实 2：Node 20 根本装不上依赖，而 22+ 原生支持 `--test` 的 glob。
+      # 保留单一入口的价值是**可对照**——失败时不需要先判断「这条腿跑的是哪一段」。
+      - name: 单测（Node ${{ matrix.node }}，pnpm test）
+        working-directory: ${{ env.PKG_DIR }}
+        run: pnpm test
+
+      # 基准 harness 的**离线回放**：用录制的 chunk 流配对比较，不联网、不碰真机、不启动浏览器
+      # （doc/comment-style.md §9.1 第 5 条）。`--offline` 是显式声明，等价于默认行为。
+      # 退出码契约（test-mock/prompt-bench.mjs）：0=全通过 / 1=有失败用例 / 2=参数或判据自检失败 /
+      # 3=--live 未获批准。这里**只跑 0 号路径**——负向对照（期望 1）由 bench-ci.mjs 负责，已含在 pnpm test 里。
+      - name: 基准 harness 离线回放
+        working-directory: ${{ env.PKG_DIR }}
+        run: node test-mock/prompt-bench.mjs --offline
+
+      # 单独再跑一次生成物卫生：它在 `pnpm test` 里也有，但这一步是**最快能定位 .gitignore 回归**的
+      # 一步，独立列出可以让失败信息直接落在它头上，而不是埋在整个 pnpm test 的尾部输出里。
+      - name: 生成物卫生（跑一次就会变的文件不得被 git 看见）
+        working-directory: ${{ env.PKG_DIR }}
+        run: node test-mock/artifacts-check.mjs
+
+      # ---- 本地入口自检：`--fast` 走的正是上面三步 ----
+      #
+      # 为什么明知重叠还要跑（**这是刻意的，不是漏删**）：
+      # `scripts/ci-local.mjs` 是 CONTRIBUTING.md 与 doc/ci-cd.md 要求开发者「推之前跑一遍」
+      # 的入口，而它里面有一条**按平台分叉**的逻辑——pnpm 的可执行名在 Windows 上是
+      # `pnpm.cmd`、其它平台是 `pnpm`，以及每步必须显式给 `cwd`。这段逻辑在开发者本机
+      # 只会在一个平台上被走到，另一边永远没人验证；一旦它坏了，表现是「文档让你跑的命令
+      # 直接崩」，而不是任何一条测试变红。
+      #
+      # 代价被压到最小：`--fast` **刻意跳过全量单测**（那是慢的那一步），只跑三个秒级步骤，
+      # 因此重复执行的净成本约 1 秒；换来的是两个平台都验证一次这个入口真的能跑通。
+      # 若将来 CI 时长紧张，删掉这一步是安全的——但**同时要接受**「本机入口只在单平台被验证」。
+      - name: 本地入口自检（scripts/ci-local.mjs --fast）
+        run: node scripts/ci-local.mjs --fast
+
+      # ---- 真机层：**刻意不跑**（见文件头）----
+      # 下面这些步骤**故意不写**，不是遗漏：
+      #   · test-mock/real-verify.mjs（npm run doctor）——需已登录 Edge，发版前由人跑
+      #   · test-mock/real-probe-*.mjs              ——同上，且逐个站点受风控限制
+      #   · test-mock/real-mirror-matrix.mjs        ——需 CDP 附着到桥已开的 Edge
+      # CI runner 没有登录态，也不该替用户敲站点。详见 doc/ci-cd.md「刻意不在 CI 里跑的东西」。
+
+      # 基准产物只在失败时上传：它们是「每次跑都会变」的文件（已被 .gitignore 覆盖），
+      # 成功后上传等于给每次绿构建堆一份没人看的 zip。
+      - name: 上传基准产物（仅失败）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-out-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            ${{ env.PKG_DIR }}/test-mock/prompt-bench/out/
+            ${{ env.PKG_DIR }}/test-mock/out/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -25,7 +25,7 @@ const { t } = useI18n()
 const route = useRoute()
 
 /** 应用版本（与 package.json 保持一致，编译期内联） */
-const APP_VERSION = '0.0.1'
+const APP_VERSION = '0.0.2'
 
 const clockText = ref('--:--:--')
 const now = ref(new Date())

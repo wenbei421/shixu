@@ -3,7 +3,6 @@ import { AtSign, Hash, Zap } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDateTimeSeconds } from '@/lib/datetime'
-import { createProject } from '@/lib/muse'
 import { parseTodoInput } from '@/lib/todo-parse'
 import { useTodoStore } from '@/stores/todo'
 
@@ -30,6 +29,8 @@ watch(
     }
     draft.value = ''
     error.value = ''
+    // 设置页可能刚建了项目，打开捕捉时重拉一次
+    void store.refreshProjects()
     window.addEventListener('keydown', onDialogKeydown, true)
     await nextTick()
     inputEl.value?.focus()
@@ -82,7 +83,8 @@ async function resolveProjectId(name: string | null) {
   const existing = store.projects.find(p => p.name === name)
   if (existing)
     return existing.id
-  const created = await createProject(name)
+  const { useMuseStore } = await import('@/stores/muse')
+  const created = await useMuseStore().addProject(name)
   await store.refreshProjects()
   return created.id
 }

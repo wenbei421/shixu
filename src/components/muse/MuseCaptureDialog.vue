@@ -43,6 +43,8 @@ watch(
     draft.value = ''
     pickedTags.value = []
     source.value = 'quick'
+    // 设置页可能刚建了标签/项目，打开捕捉时同步一次侧栏数据
+    void store.refreshSidebar()
     // 捕获阶段监听：焦点在按钮、建议标签上时 Esc/Enter 仍然生效
     window.addEventListener('keydown', onDialogKeydown, true)
     await nextTick()
