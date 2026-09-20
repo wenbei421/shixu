@@ -4300,9 +4300,11 @@ name = "shixu"
 version = "0.0.2"
 dependencies = [
  "fix-path-env",
+ "hex",
  "log",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "tauri",
  "tauri-build",

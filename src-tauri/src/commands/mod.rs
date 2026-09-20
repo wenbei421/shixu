@@ -1,7 +1,9 @@
+mod attachments;
 mod deepseek;
 mod muse;
 mod todo;
 
+pub use attachments::*;
 pub use deepseek::*;
 pub use muse::*;
 pub use todo::*;
