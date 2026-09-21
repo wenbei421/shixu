@@ -436,7 +436,8 @@
   },
   "attachments": {
     "title": "Attachments",
-    "add": "Add attachment",
+    "add": "Add",
+    "addCapture": "Add attachment",
     "empty": "No attachments",
     "remove": "Remove",
     "missing": "File missing",

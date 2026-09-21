@@ -66,11 +66,11 @@ watch(
   <Teleport to="body">
     <div
       v-if="open && attachment"
-      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-6"
+      class="fixed inset-0 z-[100] flex bg-black/50 p-3"
       @click.self="emit('close')"
     >
-      <div class="bg-background flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border shadow-2xl">
-        <header class="flex items-center gap-2 border-b px-4 py-3">
+      <div class="bg-background flex h-full w-full flex-col overflow-hidden rounded-xl border shadow-2xl">
+        <header class="flex shrink-0 items-center gap-2 border-b px-4 py-3">
           <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ attachment.filename }}</span>
           <button
             type="button"
@@ -80,28 +80,28 @@ watch(
             {{ t('attachments.close') }}
           </button>
         </header>
-        <div class="min-h-0 flex-1 overflow-auto p-4">
-          <p v-if="loading" class="text-muted-foreground text-sm">
+        <div class="min-h-0 flex-1 overflow-auto">
+          <p v-if="loading" class="text-muted-foreground p-4 text-sm">
             {{ t('attachments.preview') }}
           </p>
-          <p v-else-if="error" class="text-destructive text-sm">
+          <p v-else-if="error" class="text-destructive p-4 text-sm">
             {{ error }}
           </p>
           <img
             v-else-if="kind === 'image' && url"
             :src="url"
             :alt="attachment.filename"
-            class="mx-auto max-h-[70vh] max-w-full object-contain"
+            class="mx-auto max-h-full max-w-full object-contain p-4"
           >
           <iframe
             v-else-if="kind === 'pdf' && url"
             :src="url"
-            class="h-[70vh] w-full"
+            class="h-full w-full"
             :title="attachment.filename"
           />
           <article
             v-else-if="kind === 'md'"
-            class="prose prose-sm dark:prose-invert max-w-none"
+            class="prose prose-sm dark:prose-invert max-w-none p-6"
             v-html="html"
           />
         </div>

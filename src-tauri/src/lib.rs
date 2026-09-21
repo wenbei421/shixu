@@ -95,6 +95,8 @@ pub fn run() {
             commands::open_attachment,
             commands::read_attachment_text,
             commands::read_attachment_bytes,
+            commands::read_clipboard_attachments,
+            commands::discard_clipboard_file,
             commands::open_deepseek_window,
             commands::execute_deepseek_task,
         ])

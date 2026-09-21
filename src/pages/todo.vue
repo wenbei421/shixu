@@ -51,6 +51,11 @@ import { useTodoStore } from '@/stores/todo'
 
 const { t, locale } = useI18n()
 const store = useTodoStore()
+const attachmentSection = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
+
+function onAttachmentPaste(event: ClipboardEvent) {
+  attachmentSection.value?.handlePaste(event)
+}
 const sectionLabelClass = 'text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase'
 const contentClass = 'bg-card border-border placeholder:text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-3.5 py-3 text-[13.5px] leading-relaxed outline-none transition-colors focus:ring-3'
 const fieldClass = 'bg-card border-border text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none transition-colors focus:ring-3'
@@ -488,7 +493,7 @@ async function removeTag(name: string) {
       </div>
     </section>
 
-    <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4">
+    <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4" @paste="onAttachmentPaste">
       <template v-if="store.selected">
         <div class="flex items-center gap-2">
           <span
@@ -705,7 +710,7 @@ async function removeTag(name: string) {
           </button>
         </div>
 
-        <AttachmentSection owner-type="todo" :owner-id="store.selected.id" />
+        <AttachmentSection ref="attachmentSection" owner-type="todo" :owner-id="store.selected.id" />
 
         <div class="flex items-center justify-between gap-2">
           <p :class="sectionLabelClass">

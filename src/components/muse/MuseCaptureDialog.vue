@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 import AttachmentList from '@/components/attachments/AttachmentList.vue'
 import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
-import { flushPendingAttachments } from '@/lib/attachments'
+import { discardClipboardFile, discardPendingFiles, flushPendingAttachments } from '@/lib/attachments'
 import { NOTE_SOURCES } from '@/lib/muse'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
@@ -27,6 +27,7 @@ const source = ref<NoteSource>('quick')
 const saving = ref(false)
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const pendingFiles = ref<PendingAttachment[]>([])
+const pickerRef = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
 
 const canSave = computed(() => !!draft.value.trim() && !saving.value)
 
@@ -48,6 +49,7 @@ watch(
     draft.value = ''
     pickedTags.value = []
     source.value = 'quick'
+    void discardPendingFiles(pendingFiles.value)
     pendingFiles.value = []
     // 设置页可能刚建了标签/项目，打开捕捉时同步一次侧栏数据
     void store.refreshSidebar()
@@ -66,8 +68,20 @@ function close() {
   draft.value = ''
   pickedTags.value = []
   source.value = 'quick'
+  void discardPendingFiles(pendingFiles.value)
   pendingFiles.value = []
   emit('close')
+}
+
+function onPaste(event: ClipboardEvent) {
+  pickerRef.value?.handlePaste(event)
+}
+
+function removePending(path: string) {
+  const item = pendingFiles.value.find(file => file.path === path)
+  if (item?.ephemeral)
+    void discardClipboardFile(path)
+  pendingFiles.value = pendingFiles.value.filter(file => file.path !== path)
 }
 
 function toggleTag(name: string) {
@@ -124,7 +138,8 @@ async function save() {
       source: source.value,
     })
     if (pendingFiles.value.length && note?.id) {
-      const { errors } = await flushPendingAttachments('muse', note.id, pendingFiles.value)
+      const { errors, failed } = await flushPendingAttachments('muse', note.id, pendingFiles.value)
+      pendingFiles.value = failed
       if (errors.length)
         toast(t('attachments.partialFailed'))
     }
@@ -174,7 +189,7 @@ function onDialogKeydown(event: KeyboardEvent) {
       @click="close"
     />
 
-    <div class="bg-background relative z-10 w-full max-w-[620px] overflow-hidden rounded-xl shadow-2xl">
+    <div class="bg-background relative z-10 w-full max-w-[620px] overflow-hidden rounded-xl shadow-2xl" @paste="onPaste">
       <header class="flex items-center gap-2 px-3.5 pt-3">
         <span class="bg-primary/10 text-primary flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold">
           <Zap class="size-3" />
@@ -224,16 +239,10 @@ function onDialogKeydown(event: KeyboardEvent) {
         </button>
       </div>
 
-      <div class="space-y-1 px-4 pb-2">
+      <div v-if="pendingFiles.length" class="space-y-1 px-4 pb-2">
         <AttachmentList
           :pending="pendingFiles"
-          @remove-pending="path => pendingFiles = pendingFiles.filter(item => item.path !== path)"
-        />
-        <AttachmentPicker
-          mode="pending"
-          :remaining="5 - pendingFiles.length"
-          @pending="item => pendingFiles.push(item)"
-          @error="toast"
+          @remove-pending="removePending"
         />
       </div>
 
@@ -262,6 +271,13 @@ function onDialogKeydown(event: KeyboardEvent) {
         >
           <ClipboardPaste class="size-3.5" />
         </button>
+        <AttachmentPicker
+          ref="pickerRef"
+          mode="pending"
+          :remaining="5 - pendingFiles.length"
+          @pending="item => pendingFiles.push(item)"
+          @error="toast"
+        />
 
         <span class="text-muted-foreground ml-auto mr-2 text-[11px]">
           <kbd class="border-border rounded border px-1 font-sans text-[10px]">Esc</kbd>

@@ -19,6 +19,11 @@ const NEW_PROJECT_OPTION = '__new__'
 
 const { t, locale } = useI18n()
 const store = useMuseStore()
+const attachmentSection = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
+
+function onAttachmentPaste(event: ClipboardEvent) {
+  attachmentSection.value?.handlePaste(event)
+}
 const { toast } = useMuseToast()
 
 const contentEl = ref<HTMLElement | null>(null)
@@ -274,7 +279,7 @@ defineExpose({
 </script>
 
 <template>
-  <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4">
+  <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4" @paste="onAttachmentPaste">
     <div
       v-if="!note"
       class="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2.5 px-5 text-center text-[12.5px]"
@@ -422,6 +427,7 @@ defineExpose({
 
         <AttachmentSection
           v-if="!isTrash"
+          ref="attachmentSection"
           owner-type="muse"
           :owner-id="note.id"
         />

@@ -435,7 +435,8 @@
   },
   "attachments": {
     "title": "Adjuntos",
-    "add": "Añadir adjunto",
+    "add": "Añadir",
+    "addCapture": "Añadir adjunto",
     "empty": "Sin adjuntos",
     "remove": "Quitar",
     "missing": "Archivo ausente",

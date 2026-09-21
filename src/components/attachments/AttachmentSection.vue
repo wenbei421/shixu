@@ -17,6 +17,14 @@ const props = defineProps<{
   ownerId: string | null
 }>()
 
+const pickerRef = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
+
+function handlePaste(event: ClipboardEvent) {
+  pickerRef.value?.handlePaste(event)
+}
+
+defineExpose({ handlePaste })
+
 const { t } = useI18n()
 const { toast } = useMuseToast()
 const items = ref<Attachment[]>([])
@@ -61,6 +69,7 @@ async function onRemove(id: string) {
       </p>
       <AttachmentPicker
         v-if="ownerId"
+        ref="pickerRef"
         mode="owner"
         :owner-type="ownerType"
         :owner-id="ownerId"

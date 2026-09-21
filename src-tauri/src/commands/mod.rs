@@ -1,9 +1,11 @@
 mod attachments;
+mod clipboard;
 mod deepseek;
 mod muse;
 mod todo;
 
 pub use attachments::*;
+pub use clipboard::*;
 pub use deepseek::*;
 pub use muse::*;
 pub use todo::*;

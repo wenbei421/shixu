@@ -21,7 +21,7 @@ crate-type = [
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-tauri = { version = "2.11.5", features = [] }
+tauri = { version = "2.11.5", features = ["protocol-asset"] }
 tauri-plugin-shell = "2.3.5"
 tauri-plugin-window-state = "2.4.1"
 tauri-plugin-store = "2.4.4"
@@ -34,6 +34,8 @@ tauri-plugin-pilot = "0.7.3"
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.38"
 windows = { version = "0.61", features = ["Win32_Foundation"] }
+clipboard-win = "5.4.1"
+image = { version = "0.25.6", default-features = false, features = ["png", "bmp"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2.4.3"

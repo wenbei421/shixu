@@ -19,6 +19,34 @@ export interface PendingAttachment {
   path: string
   filename: string
   sizeBytes: number
+  /** 截图写入的临时文件，添加成功后删除 */
+  ephemeral?: boolean
+}
+
+export interface ClipboardAttachmentData {
+  types: string[]
+  text: string
+  hasImage: boolean
+}
+
+/** 剪贴板是文件或图片时拦截粘贴；纯文字留给输入框。 */
+export function shouldAttachClipboardData(data: ClipboardAttachmentData | null): boolean {
+  if (!data)
+    return false
+  if (data.types.includes('Files') || data.hasImage)
+    return true
+  return data.text.length === 0
+}
+
+export function shouldAttachClipboard(event: ClipboardEvent): boolean {
+  const data = event.clipboardData
+  if (!data)
+    return false
+  return shouldAttachClipboardData({
+    types: Array.from(data.types),
+    text: data.getData('text/plain'),
+    hasImage: Array.from(data.items).some(item => item.type.startsWith('image/')),
+  })
 }
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
@@ -86,22 +114,38 @@ export async function attachmentPreviewUrl(id: string): Promise<string> {
   return convertFileSrc(path)
 }
 
-/** 创建 owner 后批量上传；返回成功数与错误信息 */
+export function readClipboardAttachments() {
+  return invoke<Array<Pick<PendingAttachment, 'path' | 'filename' | 'ephemeral'>>>('read_clipboard_attachments')
+}
+
+export function discardClipboardFile(path: string) {
+  return invoke<void>('discard_clipboard_file', { path })
+}
+
+export async function discardPendingFiles(pending: PendingAttachment[]) {
+  await Promise.all(pending.filter(item => item.ephemeral).map(item => discardClipboardFile(item.path).catch(() => undefined)))
+}
+
+/** 创建 owner 后批量上传；返回成功数与仍未写入的项 */
 export async function flushPendingAttachments(
   ownerType: AttachmentOwnerType,
   ownerId: string,
   pending: PendingAttachment[],
-): Promise<{ ok: number, errors: string[] }> {
+): Promise<{ ok: number, errors: string[], failed: PendingAttachment[] }> {
   const errors: string[] = []
+  const failed: PendingAttachment[] = []
   let ok = 0
   for (const item of pending) {
     try {
       await addAttachment(ownerType, ownerId, item.path)
       ok++
+      if (item.ephemeral)
+        await discardClipboardFile(item.path).catch(() => undefined)
     }
     catch (e) {
       errors.push(`${item.filename}: ${e instanceof Error ? e.message : String(e)}`)
+      failed.push(item)
     }
   }
-  return { ok, errors }
+  return { ok, errors, failed }
 }

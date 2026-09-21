@@ -436,7 +436,8 @@
   },
   "attachments": {
     "title": "附件",
-    "add": "添加附件",
+    "add": "添加",
+    "addCapture": "添加附件",
     "empty": "暂无附件",
     "remove": "删除",
     "missing": "文件缺失",

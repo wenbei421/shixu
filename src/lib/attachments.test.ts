@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { attachmentExt, canPreviewAttachment, formatAttachmentSize } from './attachments'
+import { attachmentExt, canPreviewAttachment, formatAttachmentSize, shouldAttachClipboardData } from './attachments'
 
 describe('attachments helpers', () => {
   it('detects previewable types', () => {
@@ -17,5 +17,12 @@ describe('attachments helpers', () => {
   it('formats size', () => {
     expect(formatAttachmentSize(512)).toMatch(/512/)
     expect(formatAttachmentSize(2048)).toMatch(/2/)
+  })
+
+  it('attaches clipboard files and images, keeps plain text', () => {
+    expect(shouldAttachClipboardData({ types: ['text/plain'], text: '明天开会', hasImage: false })).toBe(false)
+    expect(shouldAttachClipboardData({ types: ['Files'], text: '', hasImage: false })).toBe(true)
+    expect(shouldAttachClipboardData({ types: [], text: '', hasImage: true })).toBe(true)
+    expect(shouldAttachClipboardData(null)).toBe(false)
   })
 })

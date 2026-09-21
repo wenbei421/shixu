@@ -5,7 +5,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AttachmentList from '@/components/attachments/AttachmentList.vue'
 import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
-import { flushPendingAttachments } from '@/lib/attachments'
+import { discardClipboardFile, discardPendingFiles, flushPendingAttachments } from '@/lib/attachments'
 import { formatDateTimeSeconds } from '@/lib/datetime'
 import { parseTodoInput } from '@/lib/todo-parse'
 import { useTodoStore } from '@/stores/todo'
@@ -21,6 +21,7 @@ const saving = ref(false)
 const error = ref('')
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const pendingFiles = ref<PendingAttachment[]>([])
+const pickerRef = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
 
 const preview = computed(() => parseTodoInput(draft.value))
 const canSave = computed(() => !!preview.value.title && !saving.value)
@@ -34,6 +35,7 @@ watch(
     }
     draft.value = ''
     error.value = ''
+    void discardPendingFiles(pendingFiles.value)
     pendingFiles.value = []
     // 设置页可能刚建了项目，打开捕捉时重拉一次
     void store.refreshProjects()
@@ -50,8 +52,20 @@ onUnmounted(() => {
 function close() {
   draft.value = ''
   error.value = ''
+  void discardPendingFiles(pendingFiles.value)
   pendingFiles.value = []
   emit('close')
+}
+
+function onPaste(event: ClipboardEvent) {
+  pickerRef.value?.handlePaste(event)
+}
+
+function removePending(path: string) {
+  const item = pendingFiles.value.find(file => file.path === path)
+  if (item?.ephemeral)
+    void discardClipboardFile(path)
+  pendingFiles.value = pendingFiles.value.filter(file => file.path !== path)
 }
 
 function onDialogKeydown(event: KeyboardEvent) {
@@ -113,7 +127,8 @@ async function save() {
       source: 'quick',
     })
     if (pendingFiles.value.length && task?.id) {
-      const { errors } = await flushPendingAttachments('todo', task.id, pendingFiles.value)
+      const { errors, failed } = await flushPendingAttachments('todo', task.id, pendingFiles.value)
+      pendingFiles.value = failed
       if (errors.length)
         error.value = t('attachments.partialFailed')
     }
@@ -141,6 +156,7 @@ async function save() {
         role="dialog"
         :aria-label="t('todo.capture.title')"
         @click.stop
+        @paste="onPaste"
       >
         <div class="flex items-center gap-2 border-b px-4 py-3">
           <Zap class="text-primary size-4" />
@@ -169,16 +185,10 @@ async function save() {
             <span v-for="tag in preview.tags" :key="tag">#{{ tag }}</span>
           </div>
 
-          <div class="space-y-1">
+          <div v-if="pendingFiles.length" class="space-y-1">
             <AttachmentList
               :pending="pendingFiles"
-              @remove-pending="path => pendingFiles = pendingFiles.filter(item => item.path !== path)"
-            />
-            <AttachmentPicker
-              mode="pending"
-              :remaining="5 - pendingFiles.length"
-              @pending="item => pendingFiles.push(item)"
-              @error="message => error = message"
+              @remove-pending="removePending"
             />
           </div>
 
@@ -203,6 +213,13 @@ async function save() {
             >
               <AtSign class="size-4" />
             </button>
+            <AttachmentPicker
+              ref="pickerRef"
+              mode="pending"
+              :remaining="5 - pendingFiles.length"
+              @pending="item => pendingFiles.push(item)"
+              @error="message => error = message"
+            />
             <div class="ml-auto flex gap-2">
               <button
                 type="button"
