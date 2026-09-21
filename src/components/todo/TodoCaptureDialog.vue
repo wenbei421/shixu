@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n'
 import { formatDateTimeSeconds } from '@/lib/datetime'
 import { parseTodoInput } from '@/lib/todo-parse'
 import { useTodoStore } from '@/stores/todo'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
+import { flushPendingAttachments, type PendingAttachment } from '@/lib/attachments'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -16,6 +19,7 @@ const draft = ref('')
 const saving = ref(false)
 const error = ref('')
 const inputEl = ref<HTMLTextAreaElement | null>(null)
+const pendingFiles = ref<PendingAttachment[]>([])
 
 const preview = computed(() => parseTodoInput(draft.value))
 const canSave = computed(() => !!preview.value.title && !saving.value)
@@ -29,6 +33,7 @@ watch(
     }
     draft.value = ''
     error.value = ''
+    pendingFiles.value = []
     // 设置页可能刚建了项目，打开捕捉时重拉一次
     void store.refreshProjects()
     window.addEventListener('keydown', onDialogKeydown, true)
@@ -44,6 +49,7 @@ onUnmounted(() => {
 function close() {
   draft.value = ''
   error.value = ''
+  pendingFiles.value = []
   emit('close')
 }
 
@@ -97,7 +103,7 @@ async function save() {
   try {
     const parsed = preview.value
     const projectId = await resolveProjectId(parsed.project)
-    await store.create({
+    const task = await store.create({
       title: parsed.title,
       dueAt: parsed.dueAt,
       priority: parsed.priority,
@@ -105,7 +111,13 @@ async function save() {
       tagNames: parsed.tags,
       source: 'quick',
     })
-    close()
+    if (pendingFiles.value.length && task?.id) {
+      const { errors } = await flushPendingAttachments('todo', task.id, pendingFiles.value)
+      if (errors.length)
+        error.value = t('attachments.partialFailed')
+    }
+    if (!error.value)
+      close()
   }
   catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -154,6 +166,19 @@ async function save() {
             </span>
             <span v-if="preview.project">@{{ preview.project }}</span>
             <span v-for="tag in preview.tags" :key="tag">#{{ tag }}</span>
+          </div>
+
+          <div class="space-y-1">
+            <AttachmentList
+              :pending="pendingFiles"
+              @remove-pending="path => pendingFiles = pendingFiles.filter(item => item.path !== path)"
+            />
+            <AttachmentPicker
+              mode="pending"
+              :remaining="5 - pendingFiles.length"
+              @pending="item => pendingFiles.push(item)"
+              @error="message => error = message"
+            />
           </div>
 
           <p v-if="error" class="text-destructive text-xs">

@@ -433,5 +433,21 @@
       "insight": "Using the local records below, point out where effort may be going to repeated work, and suggest one change to make now. Do not invent facts that are not in the records.",
       "plan": "Using the local records below, suggest the three most worthwhile next actions and their order. Do not invent facts that are not in the records."
     }
+  },
+  "attachments": {
+    "title": "Attachments",
+    "add": "Add attachment",
+    "empty": "No attachments",
+    "remove": "Remove",
+    "missing": "File missing",
+    "limitCount": "Up to 5 attachments",
+    "limitSize": "Each file must be 10MB or smaller",
+    "unsupported": "Unsupported file type",
+    "addFailed": "Could not add the file",
+    "partialFailed": "Some attachments failed to save",
+    "openExternal": "Open with the system app",
+    "preview": "Preview",
+    "close": "Close",
+    "dropHint": "Drop files here, or click to add"
   }
 }

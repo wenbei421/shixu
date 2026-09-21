@@ -7,6 +7,9 @@ import { useMuseToast } from '@/composables/useMuseToast'
 import { NOTE_SOURCES } from '@/lib/muse'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
+import { flushPendingAttachments, type PendingAttachment } from '@/lib/attachments'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -22,6 +25,7 @@ const pickedTags = ref<string[]>([])
 const source = ref<NoteSource>('quick')
 const saving = ref(false)
 const inputEl = ref<HTMLTextAreaElement | null>(null)
+const pendingFiles = ref<PendingAttachment[]>([])
 
 const canSave = computed(() => !!draft.value.trim() && !saving.value)
 
@@ -43,6 +47,7 @@ watch(
     draft.value = ''
     pickedTags.value = []
     source.value = 'quick'
+    pendingFiles.value = []
     // 设置页可能刚建了标签/项目，打开捕捉时同步一次侧栏数据
     void store.refreshSidebar()
     // 捕获阶段监听：焦点在按钮、建议标签上时 Esc/Enter 仍然生效
@@ -60,6 +65,7 @@ function close() {
   draft.value = ''
   pickedTags.value = []
   source.value = 'quick'
+  pendingFiles.value = []
   emit('close')
 }
 
@@ -111,11 +117,16 @@ async function save() {
     return
   saving.value = true
   try {
-    await store.capture({
+    const note = await store.capture({
       content: draft.value,
       tags: [...pickedTags.value],
       source: source.value,
     })
+    if (pendingFiles.value.length && note?.id) {
+      const { errors } = await flushPendingAttachments('muse', note.id, pendingFiles.value)
+      if (errors.length)
+        toast(t('attachments.partialFailed'))
+    }
     close()
     toast(t('muse.capture.saved'))
   }
@@ -210,6 +221,19 @@ function onDialogKeydown(event: KeyboardEvent) {
         >
           + {{ tag }}
         </button>
+      </div>
+
+      <div class="space-y-1 px-4 pb-2">
+        <AttachmentList
+          :pending="pendingFiles"
+          @remove-pending="path => pendingFiles = pendingFiles.filter(item => item.path !== path)"
+        />
+        <AttachmentPicker
+          mode="pending"
+          :remaining="5 - pendingFiles.length"
+          @pending="item => pendingFiles.push(item)"
+          @error="toast"
+        />
       </div>
 
       <footer class="border-border bg-muted/40 flex items-center gap-1 border-t px-3 py-2.5">

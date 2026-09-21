@@ -432,5 +432,21 @@
       "insight": "Con los registros locales de abajo, señala dónde el esfuerzo puede estar yéndose en trabajo repetido y sugiere un cambio inmediato. No inventes hechos que no estén en los registros.",
       "plan": "Con los registros locales de abajo, sugiere las tres acciones siguientes más útiles y su orden. No inventes hechos que no estén en los registros."
     }
+  },
+  "attachments": {
+    "title": "Adjuntos",
+    "add": "Añadir adjunto",
+    "empty": "Sin adjuntos",
+    "remove": "Quitar",
+    "missing": "Archivo ausente",
+    "limitCount": "Máximo 5 adjuntos",
+    "limitSize": "Cada archivo debe pesar 10MB o menos",
+    "unsupported": "Tipo de archivo no admitido",
+    "addFailed": "No se pudo añadir el archivo",
+    "partialFailed": "Algunos adjuntos no se guardaron",
+    "openExternal": "Abrir con la aplicación del sistema",
+    "preview": "Vista previa",
+    "close": "Cerrar",
+    "dropHint": "Suelta archivos aquí o pulsa para añadir"
   }
 }

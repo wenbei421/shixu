@@ -22,6 +22,7 @@ import {
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
+import AttachmentSection from '@/components/attachments/AttachmentSection.vue'
 import TodoBoardView from '@/components/todo/TodoBoardView.vue'
 import TodoCaptureDialog from '@/components/todo/TodoCaptureDialog.vue'
 import TodoTimelineView from '@/components/todo/TodoTimelineView.vue'
@@ -704,6 +705,8 @@ async function removeTag(name: string) {
               {{ t('todo.addTag') }}
             </button>
           </div>
+
+        <AttachmentSection owner-type="todo" :owner-id="store.selected.id" />
 
         <div class="flex items-center justify-between gap-2">
           <p :class="sectionLabelClass">
