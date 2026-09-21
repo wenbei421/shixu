@@ -1,15 +1,16 @@
 <script setup lang="ts">
+import type { PendingAttachment } from '@/lib/attachments'
 import type { NoteSource } from '@/lib/muse'
 import { AtSign, ClipboardPaste, Hash, Zap } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
+import { flushPendingAttachments } from '@/lib/attachments'
 import { NOTE_SOURCES } from '@/lib/muse'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
-import AttachmentList from '@/components/attachments/AttachmentList.vue'
-import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
-import { flushPendingAttachments, type PendingAttachment } from '@/lib/attachments'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()

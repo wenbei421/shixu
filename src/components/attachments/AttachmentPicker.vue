@@ -1,15 +1,13 @@
 <script setup lang="ts">
+import type { Attachment, AttachmentOwnerType, PendingAttachment } from '@/lib/attachments'
 import { Paperclip } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useI18n } from 'vue-i18n'
 import {
-  ATTACHMENT_EXTENSIONS,
-  MAX_ATTACHMENT_BYTES,
-  attachmentExt,
-  type Attachment,
-  type AttachmentOwnerType,
-  type PendingAttachment,
   addAttachment,
+  ATTACHMENT_EXTENSIONS,
+  attachmentExt,
+  MAX_ATTACHMENT_BYTES,
 } from '@/lib/attachments'
 
 const props = defineProps<{

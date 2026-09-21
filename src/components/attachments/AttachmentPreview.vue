@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import type { Attachment } from '@/lib/attachments'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   attachmentExt,
   attachmentPreviewUrl,
   readAttachmentText,
-  type Attachment,
 } from '@/lib/attachments'
 import { renderMarkdown } from '@/lib/markdown'
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Attachment, PendingAttachment } from '@/lib/attachments'
 import { FileText, Image, Paperclip, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -6,11 +7,9 @@ import {
   canPreviewAttachment,
   formatAttachmentSize,
   openAttachment,
-  type Attachment,
-  type PendingAttachment,
 } from '@/lib/attachments'
 
-const props = defineProps<{
+defineProps<{
   saved?: Attachment[]
   pending?: PendingAttachment[]
 }>()

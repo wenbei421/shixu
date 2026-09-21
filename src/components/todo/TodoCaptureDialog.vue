@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import type { PendingAttachment } from '@/lib/attachments'
 import { AtSign, Hash, Zap } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
+import { flushPendingAttachments } from '@/lib/attachments'
 import { formatDateTimeSeconds } from '@/lib/datetime'
 import { parseTodoInput } from '@/lib/todo-parse'
 import { useTodoStore } from '@/stores/todo'
-import AttachmentList from '@/components/attachments/AttachmentList.vue'
-import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
-import { flushPendingAttachments, type PendingAttachment } from '@/lib/attachments'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()

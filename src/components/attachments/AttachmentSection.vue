@@ -1,13 +1,12 @@
 <script setup lang="ts">
+import type { Attachment, AttachmentOwnerType } from '@/lib/attachments'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMuseToast } from '@/composables/useMuseToast'
 import {
-  MAX_ATTACHMENTS_PER_OWNER,
   listAttachments,
+  MAX_ATTACHMENTS_PER_OWNER,
   removeAttachment,
-  type Attachment,
-  type AttachmentOwnerType,
 } from '@/lib/attachments'
 import AttachmentList from './AttachmentList.vue'
 import AttachmentPicker from './AttachmentPicker.vue'
