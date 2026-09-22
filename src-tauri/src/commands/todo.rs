@@ -465,6 +465,15 @@ pub async fn delete_todo_task(db: tauri::State<'_, Db>, id: String) -> Result<()
     if res.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("task {id}")));
     }
+
+    let app_data = db
+        .path
+        .parent()
+        .ok_or_else(|| AppError::Invalid("db parent".into()))?;
+    crate::commands::attachments::hard_delete_owner_attachments(
+        &db.pool, app_data, "todo", task_id,
+    )
+    .await?;
     Ok(())
 }
 

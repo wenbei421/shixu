@@ -45,7 +45,45 @@
     "placeholder": "{name} shell is ready. Content will be wired next."
   },
   "home": {
-    "label": "Overview"
+    "label": "Overview",
+    "summary": "See where today went. Fragments, categories, and apps are not recorded yet, so these stay empty.",
+    "summaryLive": "{todo} due, {notes} noted. Fragments, categories, and apps are not recorded yet.",
+    "statsLabel": "Stats",
+    "emptyValue": "—",
+    "cards": {
+      "fragments": "Today's fragments",
+      "fragmentsHint": "Timeline is not connected yet",
+      "fragmentsHintLive": "{count} recorded",
+      "todo": "Due today",
+      "todoHint": "From Todo · Today",
+      "todoHintLive": "Open, including overdue",
+      "muse": "Noted today",
+      "museHint": "From Muse · Today",
+      "museHintLive": "Created today",
+      "plan": "Plan completion",
+      "planHint": "Plan is not connected yet",
+      "planHintLive": "Due today {done}/{total}",
+      "planHintNone": "Nothing is due today"
+    },
+    "heatmap": {
+      "title": "Fragment heatmap",
+      "range": "Last 16 weeks · by day",
+      "empty": "Timeline has not recorded fragments yet",
+      "less": "Less",
+      "more": "More"
+    },
+    "allocation": {
+      "title": "Where time went",
+      "source": "Insight",
+      "emptyTitle": "Activity categories are not connected yet",
+      "emptyBody": "Once window recording is on, this shows the day by category."
+    },
+    "apps": {
+      "title": "Apps",
+      "source": "Not counted yet",
+      "emptyTitle": "App stats are not connected yet",
+      "emptyBody": "No fragments have been grouped by app."
+    }
   },
   "languages": {
     "label": "Languages"
@@ -433,5 +471,22 @@
       "insight": "Using the local records below, point out where effort may be going to repeated work, and suggest one change to make now. Do not invent facts that are not in the records.",
       "plan": "Using the local records below, suggest the three most worthwhile next actions and their order. Do not invent facts that are not in the records."
     }
+  },
+  "attachments": {
+    "title": "Attachments",
+    "add": "Add",
+    "addCapture": "Add attachment",
+    "empty": "No attachments",
+    "remove": "Remove",
+    "missing": "File missing",
+    "limitCount": "Up to 5 attachments",
+    "limitSize": "Each file must be 10MB or smaller",
+    "unsupported": "Unsupported file type",
+    "addFailed": "Could not add the file",
+    "partialFailed": "Some attachments failed to save",
+    "openExternal": "Open with the system app",
+    "preview": "Preview",
+    "close": "Close",
+    "dropHint": "Drop files here, or click to add"
   }
 }

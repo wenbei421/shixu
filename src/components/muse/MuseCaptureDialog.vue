@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { PendingAttachment } from '@/lib/attachments'
 import type { NoteSource } from '@/lib/muse'
 import { AtSign, ClipboardPaste, Hash, Zap } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+import AttachmentPicker from '@/components/attachments/AttachmentPicker.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
+import { discardClipboardFile, discardPendingFiles, flushPendingAttachments } from '@/lib/attachments'
 import { NOTE_SOURCES } from '@/lib/muse'
 import { cn } from '@/lib/utils'
 import { useMuseStore } from '@/stores/muse'
@@ -22,6 +26,8 @@ const pickedTags = ref<string[]>([])
 const source = ref<NoteSource>('quick')
 const saving = ref(false)
 const inputEl = ref<HTMLTextAreaElement | null>(null)
+const pendingFiles = ref<PendingAttachment[]>([])
+const pickerRef = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
 
 const canSave = computed(() => !!draft.value.trim() && !saving.value)
 
@@ -43,6 +49,8 @@ watch(
     draft.value = ''
     pickedTags.value = []
     source.value = 'quick'
+    void discardPendingFiles(pendingFiles.value)
+    pendingFiles.value = []
     // 设置页可能刚建了标签/项目，打开捕捉时同步一次侧栏数据
     void store.refreshSidebar()
     // 捕获阶段监听：焦点在按钮、建议标签上时 Esc/Enter 仍然生效
@@ -60,7 +68,20 @@ function close() {
   draft.value = ''
   pickedTags.value = []
   source.value = 'quick'
+  void discardPendingFiles(pendingFiles.value)
+  pendingFiles.value = []
   emit('close')
+}
+
+function onPaste(event: ClipboardEvent) {
+  pickerRef.value?.handlePaste(event)
+}
+
+function removePending(path: string) {
+  const item = pendingFiles.value.find(file => file.path === path)
+  if (item?.ephemeral)
+    void discardClipboardFile(path)
+  pendingFiles.value = pendingFiles.value.filter(file => file.path !== path)
 }
 
 function toggleTag(name: string) {
@@ -111,11 +132,17 @@ async function save() {
     return
   saving.value = true
   try {
-    await store.capture({
+    const note = await store.capture({
       content: draft.value,
       tags: [...pickedTags.value],
       source: source.value,
     })
+    if (pendingFiles.value.length && note?.id) {
+      const { errors, failed } = await flushPendingAttachments('muse', note.id, pendingFiles.value)
+      pendingFiles.value = failed
+      if (errors.length)
+        toast(t('attachments.partialFailed'))
+    }
     close()
     toast(t('muse.capture.saved'))
   }
@@ -162,7 +189,7 @@ function onDialogKeydown(event: KeyboardEvent) {
       @click="close"
     />
 
-    <div class="bg-background relative z-10 w-full max-w-[620px] overflow-hidden rounded-xl shadow-2xl">
+    <div class="bg-background relative z-10 w-full max-w-[620px] overflow-hidden rounded-xl shadow-2xl" @paste="onPaste">
       <header class="flex items-center gap-2 px-3.5 pt-3">
         <span class="bg-primary/10 text-primary flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold">
           <Zap class="size-3" />
@@ -212,6 +239,13 @@ function onDialogKeydown(event: KeyboardEvent) {
         </button>
       </div>
 
+      <div v-if="pendingFiles.length" class="space-y-1 px-4 pb-2">
+        <AttachmentList
+          :pending="pendingFiles"
+          @remove-pending="removePending"
+        />
+      </div>
+
       <footer class="border-border bg-muted/40 flex items-center gap-1 border-t px-3 py-2.5">
         <button
           type="button"
@@ -237,6 +271,13 @@ function onDialogKeydown(event: KeyboardEvent) {
         >
           <ClipboardPaste class="size-3.5" />
         </button>
+        <AttachmentPicker
+          ref="pickerRef"
+          mode="pending"
+          :remaining="5 - pendingFiles.length"
+          @pending="item => pendingFiles.push(item)"
+          @error="toast"
+        />
 
         <span class="text-muted-foreground ml-auto mr-2 text-[11px]">
           <kbd class="border-border rounded border px-1 font-sans text-[10px]">Esc</kbd>

@@ -54,10 +54,18 @@ a {
 }
 
 /* 恢复输入框可选中/可输入（body 全局 user-select: none） */
-input,
+/* checkbox / radio 等不是打字控件，不能跟文本框一样用 I-beam */
+input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='range']):not([type='color']),
 textarea {
   user-select: text;
   cursor: text;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  cursor: pointer;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

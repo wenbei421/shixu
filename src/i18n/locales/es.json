@@ -45,7 +45,45 @@
     "placeholder": "El esqueleto de {name} está listo. El contenido se conectará después."
   },
   "home": {
-    "label": "Resumen"
+    "label": "Resumen",
+    "summary": "Mira en qué se fue el día. Aún no hay fragmentos, categorías ni apps, así que estos espacios quedan vacíos.",
+    "summaryLive": "{todo} para hoy, {notes} anotadas. Aún no hay fragmentos, categorías ni apps.",
+    "statsLabel": "Estadísticas",
+    "emptyValue": "—",
+    "cards": {
+      "fragments": "Fragmentos de hoy",
+      "fragmentsHint": "La línea de tiempo aún no está conectada",
+      "fragmentsHintLive": "{count} registrados",
+      "todo": "Para hoy",
+      "todoHint": "Desde Tareas · Hoy",
+      "todoHintLive": "Abiertas, incluidas las vencidas",
+      "muse": "Anotado hoy",
+      "museHint": "Desde Muse · Hoy",
+      "museHintLive": "Creadas hoy",
+      "plan": "Cumplimiento del plan",
+      "planHint": "El plan aún no está conectado",
+      "planHintLive": "Vencen hoy {done}/{total}",
+      "planHintNone": "Hoy no vence ninguna tarea"
+    },
+    "heatmap": {
+      "title": "Mapa de fragmentos",
+      "range": "Últimas 16 semanas · por día",
+      "empty": "La línea de tiempo aún no registra fragmentos",
+      "less": "Menos",
+      "more": "Más"
+    },
+    "allocation": {
+      "title": "A dónde fue el tiempo",
+      "source": "Perspectivas",
+      "emptyTitle": "Las categorías de actividad aún no están conectadas",
+      "emptyBody": "Cuando haya registro de ventanas, aquí se ve el día por categoría."
+    },
+    "apps": {
+      "title": "Apps",
+      "source": "Sin contar",
+      "emptyTitle": "Las estadísticas de apps aún no están conectadas",
+      "emptyBody": "Todavía no hay fragmentos agrupados por app."
+    }
   },
   "languages": {
     "label": "Idiomas"
@@ -432,5 +470,22 @@
       "insight": "Con los registros locales de abajo, señala dónde el esfuerzo puede estar yéndose en trabajo repetido y sugiere un cambio inmediato. No inventes hechos que no estén en los registros.",
       "plan": "Con los registros locales de abajo, sugiere las tres acciones siguientes más útiles y su orden. No inventes hechos que no estén en los registros."
     }
+  },
+  "attachments": {
+    "title": "Adjuntos",
+    "add": "Añadir",
+    "addCapture": "Añadir adjunto",
+    "empty": "Sin adjuntos",
+    "remove": "Quitar",
+    "missing": "Archivo ausente",
+    "limitCount": "Máximo 5 adjuntos",
+    "limitSize": "Cada archivo debe pesar 10MB o menos",
+    "unsupported": "Tipo de archivo no admitido",
+    "addFailed": "No se pudo añadir el archivo",
+    "partialFailed": "Algunos adjuntos no se guardaron",
+    "openExternal": "Abrir con la aplicación del sistema",
+    "preview": "Vista previa",
+    "close": "Cerrar",
+    "dropHint": "Suelta archivos aquí o pulsa para añadir"
   }
 }

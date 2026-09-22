@@ -21,6 +21,7 @@ import {
 } from '@lucide/vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttachmentSection from '@/components/attachments/AttachmentSection.vue'
 import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import TodoBoardView from '@/components/todo/TodoBoardView.vue'
 import TodoCaptureDialog from '@/components/todo/TodoCaptureDialog.vue'
@@ -37,11 +38,11 @@ import { formatDate } from '@/lib/datetime'
 import { relativeTime } from '@/lib/muse-format'
 import {
   CAPTURE_SHORTCUT,
-  SEARCH_SHORTCUT,
   isCaptureShortcut,
   isSearchShortcut,
   isTypingTarget,
   numberIndexFromKey,
+  SEARCH_SHORTCUT,
 } from '@/lib/shortcuts'
 import { TODO_PRIORITY_FILTERS, TODO_STATUS_ORDER, TODO_VIEW_ORDER } from '@/lib/todo'
 import { formatDue, formatListTimestamp, isOverdue, priorityDotClass, priorityTextClass, statusDotClass, statusTextClass } from '@/lib/todo-format'
@@ -50,6 +51,11 @@ import { useTodoStore } from '@/stores/todo'
 
 const { t, locale } = useI18n()
 const store = useTodoStore()
+const attachmentSection = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
+
+function onAttachmentPaste(event: ClipboardEvent) {
+  attachmentSection.value?.handlePaste(event)
+}
 const sectionLabelClass = 'text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase'
 const contentClass = 'bg-card border-border placeholder:text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-3.5 py-3 text-[13.5px] leading-relaxed outline-none transition-colors focus:ring-3'
 const fieldClass = 'bg-card border-border text-muted-foreground focus:border-primary focus:ring-primary/15 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none transition-colors focus:ring-3'
@@ -281,7 +287,6 @@ async function removeTag(name: string) {
     return
   await store.update(task.id, { tagNames: task.tags.filter(tag => tag !== name) })
 }
-
 </script>
 
 <template>
@@ -488,7 +493,7 @@ async function removeTag(name: string) {
       </div>
     </section>
 
-    <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4">
+    <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4" @paste="onAttachmentPaste">
       <template v-if="store.selected">
         <div class="flex items-center gap-2">
           <span
@@ -601,51 +606,51 @@ async function removeTag(name: string) {
                   : t('todo.timeline.noDue') }}
               </button>
             </PopoverTrigger>
-              <PopoverContent class="w-auto p-0" align="start">
-                <div class="border-border flex flex-wrap gap-1.5 border-b p-2">
-                  <Button
-                    v-for="option in dueQuickOptions"
-                    :key="option.id"
-                    type="button"
-                    size="sm"
-                    :variant="isSameDueDay(dueDraft, option.value) ? 'default' : 'outline'"
-                    class="h-7 px-2.5 text-xs"
-                    @click="onDueChange(option.value)"
-                  >
-                    {{ t(`todo.dueQuick.${option.id}`) }}
-                  </Button>
-                  <Button
-                    v-if="dueDraft"
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    class="text-muted-foreground h-7 px-2.5 text-xs"
-                    @click="clearDue"
-                  >
-                    {{ t('todo.dueQuick.clear') }}
-                  </Button>
-                </div>
-                <Calendar
-                  v-model="dueDraft"
-                  :locale="calendarLocale"
-                  :default-placeholder="defaultPlaceholder"
-                  layout="month-and-year"
-                  initial-focus
-                  @update:model-value="onDueChange"
-                />
-              </PopoverContent>
-            </Popover>
-            <button
-              v-if="dueDraft"
-              type="button"
-              class="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-              :title="t('todo.dueQuick.clear')"
-              :aria-label="t('todo.dueQuick.clear')"
-              @click.stop.prevent="clearDue"
-            >
-              <X class="size-3.5" />
-            </button>
-          </div>
+            <PopoverContent class="w-auto p-0" align="start">
+              <div class="border-border flex flex-wrap gap-1.5 border-b p-2">
+                <Button
+                  v-for="option in dueQuickOptions"
+                  :key="option.id"
+                  type="button"
+                  size="sm"
+                  :variant="isSameDueDay(dueDraft, option.value) ? 'default' : 'outline'"
+                  class="h-7 px-2.5 text-xs"
+                  @click="onDueChange(option.value)"
+                >
+                  {{ t(`todo.dueQuick.${option.id}`) }}
+                </Button>
+                <Button
+                  v-if="dueDraft"
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  class="text-muted-foreground h-7 px-2.5 text-xs"
+                  @click="clearDue"
+                >
+                  {{ t('todo.dueQuick.clear') }}
+                </Button>
+              </div>
+              <Calendar
+                v-model="dueDraft"
+                :locale="calendarLocale"
+                :default-placeholder="defaultPlaceholder"
+                layout="month-and-year"
+                initial-focus
+                @update:model-value="onDueChange"
+              />
+            </PopoverContent>
+          </Popover>
+          <button
+            v-if="dueDraft"
+            type="button"
+            class="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+            :title="t('todo.dueQuick.clear')"
+            :aria-label="t('todo.dueQuick.clear')"
+            @click.stop.prevent="clearDue"
+          >
+            <X class="size-3.5" />
+          </button>
+        </div>
 
         <p :class="sectionLabelClass">
           {{ t('todo.fields.project') }}
@@ -669,86 +674,88 @@ async function removeTag(name: string) {
         <p :class="sectionLabelClass">
           {{ t('todo.fields.tags') }}
         </p>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span
-              v-for="tag in store.selected.tags"
-              :key="tag"
-              class="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2.5 text-[11.5px] font-medium"
-            >
-              #{{ tag }}
-              <button
-                type="button"
-                class="hover:bg-primary/20 flex size-4 items-center justify-center rounded opacity-60 transition-opacity hover:opacity-100"
-                :title="t('todo.removeTag')"
-                @click="removeTag(tag)"
-              >
-                <X class="size-3" />
-              </button>
-            </span>
-            <input
-              v-if="tagInputOpen"
-              v-model="tagDraft"
-              class="border-primary bg-background w-[88px] rounded-md border px-2 py-1 text-[11.5px] outline-none"
-              :placeholder="t('todo.tagPlaceholder')"
-              autofocus
-              @blur="addTag"
-              @keydown.enter.prevent="addTag"
-              @keydown.esc.prevent="tagInputOpen = false"
-            >
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span
+            v-for="tag in store.selected.tags"
+            :key="tag"
+            class="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2.5 text-[11.5px] font-medium"
+          >
+            #{{ tag }}
             <button
-              v-else
               type="button"
-              class="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-md border border-dashed px-2.5 py-1 text-[11.5px] transition-colors"
-              @click="openTagInput"
+              class="hover:bg-primary/20 flex size-4 items-center justify-center rounded opacity-60 transition-opacity hover:opacity-100"
+              :title="t('todo.removeTag')"
+              @click="removeTag(tag)"
             >
-              {{ t('todo.addTag') }}
+              <X class="size-3" />
             </button>
-          </div>
+          </span>
+          <input
+            v-if="tagInputOpen"
+            v-model="tagDraft"
+            class="border-primary bg-background w-[88px] rounded-md border px-2 py-1 text-[11.5px] outline-none"
+            :placeholder="t('todo.tagPlaceholder')"
+            autofocus
+            @blur="addTag"
+            @keydown.enter.prevent="addTag"
+            @keydown.esc.prevent="tagInputOpen = false"
+          >
+          <button
+            v-else
+            type="button"
+            class="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-md border border-dashed px-2.5 py-1 text-[11.5px] transition-colors"
+            @click="openTagInput"
+          >
+            {{ t('todo.addTag') }}
+          </button>
+        </div>
+
+        <AttachmentSection ref="attachmentSection" owner-type="todo" :owner-id="store.selected.id" />
 
         <div class="flex items-center justify-between gap-2">
           <p :class="sectionLabelClass">
             {{ t('todo.fields.subtasks') }}
           </p>
-            <span
-              v-if="store.subtaskProgress.total"
-              class="text-muted-foreground text-[11px]"
-            >
-              {{ store.subtaskProgress.done }}/{{ store.subtaskProgress.total }}
-            </span>
-          </div>
-          <ul class="space-y-1">
-            <li
-              v-for="sub in store.subtasks"
-              :key="sub.id"
-              class="hover:bg-muted/50 flex items-center gap-2 rounded-md px-1 py-1"
-            >
-              <input
-                type="checkbox"
-                :checked="sub.status === 'done'"
-                @change="onToggle(sub.id, ($event.target as HTMLInputElement).checked)"
-              >
-              <span
-                class="min-w-0 flex-1 truncate text-sm"
-                :class="sub.status === 'done' ? 'text-muted-foreground line-through' : ''"
-              >
-                {{ sub.title }}
-              </span>
-              <button
-                type="button"
-                class="text-muted-foreground hover:text-destructive p-0.5"
-                :title="t('todo.delete')"
-                @click="store.remove(sub.id)"
-              >
-                <X class="size-3.5" />
-              </button>
-            </li>
-          </ul>
-          <input
-            v-model="subtaskDraft"
-            :class="fieldClass"
-            :placeholder="t('todo.subtaskPlaceholder')"
-            @keydown.enter.prevent="onCreateSubtask"
+          <span
+            v-if="store.subtaskProgress.total"
+            class="text-muted-foreground text-[11px]"
           >
+            {{ store.subtaskProgress.done }}/{{ store.subtaskProgress.total }}
+          </span>
+        </div>
+        <ul class="space-y-1">
+          <li
+            v-for="sub in store.subtasks"
+            :key="sub.id"
+            class="hover:bg-muted/50 flex items-center gap-2 rounded-md px-1 py-1"
+          >
+            <input
+              type="checkbox"
+              :checked="sub.status === 'done'"
+              @change="onToggle(sub.id, ($event.target as HTMLInputElement).checked)"
+            >
+            <span
+              class="min-w-0 flex-1 truncate text-sm"
+              :class="sub.status === 'done' ? 'text-muted-foreground line-through' : ''"
+            >
+              {{ sub.title }}
+            </span>
+            <button
+              type="button"
+              class="text-muted-foreground hover:text-destructive p-0.5"
+              :title="t('todo.delete')"
+              @click="store.remove(sub.id)"
+            >
+              <X class="size-3.5" />
+            </button>
+          </li>
+        </ul>
+        <input
+          v-model="subtaskDraft"
+          :class="fieldClass"
+          :placeholder="t('todo.subtaskPlaceholder')"
+          @keydown.enter.prevent="onCreateSubtask"
+        >
       </template>
       <div
         v-else

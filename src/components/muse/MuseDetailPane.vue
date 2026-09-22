@@ -3,6 +3,7 @@ import type { NoteSource, NoteStatus } from '@/lib/muse'
 import { Archive, ArchiveRestore, Check, RotateCcw, Sparkles, Trash2, X } from '@lucide/vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttachmentSection from '@/components/attachments/AttachmentSection.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import OutOfFilterHint from '@/components/OutOfFilterHint.vue'
 import { useMuseToast } from '@/composables/useMuseToast'
@@ -18,6 +19,11 @@ const NEW_PROJECT_OPTION = '__new__'
 
 const { t, locale } = useI18n()
 const store = useMuseStore()
+const attachmentSection = ref<{ handlePaste: (event: ClipboardEvent) => void } | null>(null)
+
+function onAttachmentPaste(event: ClipboardEvent) {
+  attachmentSection.value?.handlePaste(event)
+}
 const { toast } = useMuseToast()
 
 const contentEl = ref<HTMLElement | null>(null)
@@ -273,7 +279,7 @@ defineExpose({
 </script>
 
 <template>
-  <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4">
+  <aside class="border-border flex w-[344px] shrink-0 flex-col gap-3.5 overflow-y-auto border-l pl-4" @paste="onAttachmentPaste">
     <div
       v-if="!note"
       class="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2.5 px-5 text-center text-[12.5px]"
@@ -418,6 +424,13 @@ defineExpose({
             {{ t('muse.detail.addTag') }}
           </button>
         </div>
+
+        <AttachmentSection
+          v-if="!isTrash"
+          ref="attachmentSection"
+          owner-type="muse"
+          :owner-id="note.id"
+        />
 
         <p class="text-muted-foreground text-[10.5px] font-semibold tracking-widest uppercase">
           {{ t('muse.detail.sectionProject') }}
