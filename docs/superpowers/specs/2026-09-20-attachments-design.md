@@ -61,7 +61,7 @@ attachments/
 ### 3.3 类型白名单
 
 - 图片：`png` / `jpg` / `jpeg` / `gif` / `webp`
-- 文档：`pdf` / `md` / `markdown` / `docx`
+- 文档：`pdf` / `md` / `markdown` / `docx` / `xlsx` / `xls`
 - 压缩包：`zip` / `7z` / `rar`
 
 扩展名与 MIME 双检；路径禁止 `..` 等 traversal。
@@ -116,7 +116,7 @@ attachments/
 ### 5.4 预览分流
 
 - 图片 / `md` / `pdf` → `AttachmentPreview`
-- `docx` / 压缩包 / 其他 → `open_attachment`
+- `docx` / `xlsx` / `xls` / 压缩包 / 其他 → `open_attachment`
 
 ## 6. 错误处理
 

@@ -17,7 +17,8 @@ pub const MAX_ATTACHMENT_BYTES: u64 = 10 * 1024 * 1024;
 pub const MAX_ATTACHMENTS_PER_OWNER: i64 = 5;
 
 const ALLOWED_EXT: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "pdf", "md", "markdown", "docx", "zip", "7z", "rar",
+    "png", "jpg", "jpeg", "gif", "webp", "pdf", "md", "markdown", "docx", "xlsx", "xls", "zip",
+    "7z", "rar",
 ];
 
 pub fn normalize_ext(filename: &str) -> Option<String> {
@@ -39,6 +40,8 @@ pub fn mime_for_ext(ext: &str) -> &'static str {
         "pdf" => "application/pdf",
         "md" | "markdown" => "text/markdown",
         "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "xls" => "application/vnd.ms-excel",
         "zip" => "application/zip",
         "7z" => "application/x-7z-compressed",
         "rar" => "application/vnd.rar",
@@ -470,5 +473,12 @@ mod tests {
     fn previewable_set() {
         assert!(is_previewable("pdf"));
         assert!(!is_previewable("docx"));
+        assert!(!is_previewable("xlsx"));
+        assert_eq!(normalize_ext("budget.XLSX").as_deref(), Some("xlsx"));
+        assert_eq!(normalize_ext("old.xls").as_deref(), Some("xls"));
+        assert_eq!(
+            mime_for_ext("xlsx"),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
     }
 }

@@ -27,7 +27,7 @@ function iconFor(filename: string) {
   const ext = attachmentExt(filename)
   if (ext && ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext))
     return Image
-  if (ext && ['pdf', 'md', 'markdown', 'docx'].includes(ext))
+  if (ext && ['pdf', 'md', 'markdown', 'docx', 'xlsx', 'xls'].includes(ext))
     return FileText
   return Paperclip
 }

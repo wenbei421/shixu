@@ -56,6 +56,8 @@ const PREVIEW_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'md', '
 const ALLOWED_EXT = new Set([
   ...PREVIEW_EXT,
   'docx',
+  'xlsx',
+  'xls',
   'zip',
   '7z',
   'rar',
