@@ -410,6 +410,11 @@
       "group": "Priority",
       "all": "All"
     },
+    "projectFilter": {
+      "group": "Projects",
+      "all": "All",
+      "empty": "No projects yet"
+    },
     "view": {
       "card": "List",
       "board": "Board",

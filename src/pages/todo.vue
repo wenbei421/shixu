@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/popover'
 import { toIntlLocale } from '@/lib/config'
 import { formatDate } from '@/lib/datetime'
-import { relativeTime } from '@/lib/muse-format'
+import { relativeTime, tagColor } from '@/lib/muse-format'
 import {
   CAPTURE_SHORTCUT,
   isCaptureShortcut,
@@ -112,6 +112,14 @@ const projectSelectValue = computed({
 /** 优先级组右栏数字：与当前视角联动（例如在「今天」下看各优先级有几条） */
 function priorityCount(priority: TodoPriority | 'all') {
   return store.countsByPriority[priority]?.[store.perspective] ?? 0
+}
+
+function projectCount(key: string) {
+  return store.countsByProject[key] ?? 0
+}
+
+function projectDotColor(name: string, color?: string | null) {
+  return color || tagColor(name)
 }
 
 onMounted(() => {
@@ -351,6 +359,65 @@ async function removeTag(name: string) {
             {{ priorityCount(priority) }}
           </span>
         </button>
+      </nav>
+
+      <p class="text-muted-foreground px-2 pt-4 pb-1.5 text-[10.5px] font-semibold tracking-widest uppercase">
+        {{ t('todo.projectFilter.group') }}
+      </p>
+      <nav class="flex flex-col gap-0.5 pb-2">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors"
+          :class="store.projectFilter === 'all'
+            ? 'bg-primary/10 text-primary font-semibold'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          @click="store.setProjectFilter('all')"
+        >
+          <span class="bg-muted-foreground/40 size-2 shrink-0 rounded-full" />
+          <span class="truncate">{{ t('todo.projectFilter.all') }}</span>
+          <span class="ml-auto text-[11px] tabular-nums opacity-70">
+            {{ projectCount('all') }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors"
+          :class="store.projectFilter === 'none'
+            ? 'bg-primary/10 text-primary font-semibold'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          @click="store.setProjectFilter('none')"
+        >
+          <span class="border-muted-foreground/50 size-2 shrink-0 rounded-full border border-dashed" />
+          <span class="truncate">{{ t('todo.noProject') }}</span>
+          <span class="ml-auto text-[11px] tabular-nums opacity-70">
+            {{ projectCount('none') }}
+          </span>
+        </button>
+        <button
+          v-for="project in store.projects"
+          :key="project.id"
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors"
+          :class="store.projectFilter === project.id
+            ? 'bg-primary/10 text-primary font-semibold'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          @click="store.setProjectFilter(project.id)"
+        >
+          <span
+            class="size-2 shrink-0 rounded-full"
+            :style="{ background: projectDotColor(project.name, project.color) }"
+          />
+          <span class="truncate">{{ project.name }}</span>
+          <span class="ml-auto text-[11px] tabular-nums opacity-70">
+            {{ projectCount(project.id) }}
+          </span>
+        </button>
+        <p
+          v-if="!store.projects.length"
+          class="text-muted-foreground px-2 py-1 text-xs"
+        >
+          {{ t('todo.projectFilter.empty') }}
+        </p>
       </nav>
     </aside>
 

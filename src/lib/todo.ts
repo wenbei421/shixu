@@ -36,6 +36,8 @@ export interface ListTodoQuery {
   perspective?: TodoPerspective
   keyword?: string
   priority?: TodoPriority | 'all'
+  /** `all` / 缺省：不过滤；`none`：无项目；其余为项目 ID */
+  projectId?: string | 'all' | 'none'
 }
 
 export interface CreateTodoPayload {
@@ -80,10 +82,26 @@ export interface TodoCounts {
 export interface TodoCountsQuery {
   /** 与 `ListTodoQuery.priority` 同语义：'all' / 'high' / 'medium' / 'low' / 'none' */
   priority?: TodoPriority | 'all'
+  /** 与 `ListTodoQuery.projectId` 同语义 */
+  projectId?: string | 'all' | 'none'
 }
 
 export function getTodoCounts(query: TodoCountsQuery = {}) {
   return invoke<TodoCounts>('get_todo_counts', { query })
+}
+
+export interface TodoProjectCount {
+  projectId: string | null
+  count: number
+}
+
+export interface TodoProjectCountsQuery {
+  perspective?: TodoPerspective
+  priority?: TodoPriority | 'all'
+}
+
+export function getTodoProjectCounts(query: TodoProjectCountsQuery = {}) {
+  return invoke<TodoProjectCount[]>('get_todo_project_counts', { query })
 }
 
 export function createTodoTask(req: CreateTodoPayload) {

@@ -18,6 +18,7 @@ import {
   deleteTodoTask,
   exportTodoJson,
   getTodoCounts,
+  getTodoProjectCounts,
   listTodoSubtasks,
   listTodoTasks,
   updateTodoTask,
@@ -32,6 +33,8 @@ export const useTodoStore = defineStore('todo', () => {
   const perspective = ref<TodoPerspective>('inbox')
   const keyword = ref('')
   const priorityFilter = ref<TodoPriority | 'all'>('all')
+  /** `all` / `none` / 项目 ID */
+  const projectFilter = ref<string>('all')
   const viewMode = ref<TodoViewMode>('card')
   const selectedId = ref<string | null>(null)
   /** 日期或状态改完后已不符合当前筛选，仍留在列表里的那条 */
@@ -47,6 +50,8 @@ export const useTodoStore = defineStore('todo', () => {
    * 例：切到 high 时本组「高」的右栏数字 = countsByPriority.high.all
    */
   const countsByPriority = ref<Partial<Record<TodoPriority | 'all', TodoCounts>>>({})
+  /** 当前 perspective + priority 下，各项目的条数；`none` 表示无项目，`all` 为合计 */
+  const countsByProject = ref<Record<string, number>>({ all: 0, none: 0 })
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   let projectsLoaded = false
@@ -74,17 +79,30 @@ export const useTodoStore = defineStore('todo', () => {
     const priorities: Array<TodoPriority | 'all'> = ['all', 'high', 'medium', 'low', 'none']
     try {
       const results = await Promise.all(
-        priorities.map(async p => [p, await getTodoCounts({ priority: p })] as const),
+        priorities.map(async p => [p, await getTodoCounts({
+          priority: p,
+          projectId: projectFilter.value,
+        })] as const),
       )
       const next: Partial<Record<TodoPriority | 'all', TodoCounts>> = {}
       for (const [p, c] of results)
         next[p] = c
       countsByPriority.value = next
-      // 当前 priority 视图用快照里的值同步
       counts.value = next[priorityFilter.value] ?? counts.value
+
+      const projectRows = await getTodoProjectCounts({
+        perspective: perspective.value,
+        priority: priorityFilter.value,
+      })
+      const byProject: Record<string, number> = { all: 0, none: 0 }
+      for (const row of projectRows) {
+        const key = row.projectId ?? 'none'
+        byProject[key] = row.count
+        byProject.all += row.count
+      }
+      countsByProject.value = byProject
     }
     catch (e) {
-      // 计数失败不阻塞主列表，但要打日志方便排查（此前静默吞掉导致全是 0）
       console.error('[todo] refreshAllCounts failed', e)
     }
   }
@@ -115,6 +133,7 @@ export const useTodoStore = defineStore('todo', () => {
           perspective: perspective.value,
           keyword: keyword.value.trim() || undefined,
           priority: priorityFilter.value,
+          projectId: projectFilter.value,
         }),
       ]
       if (!projectsLoaded)
@@ -151,6 +170,11 @@ export const useTodoStore = defineStore('todo', () => {
 
   async function setPriorityFilter(next: TodoPriority | 'all') {
     priorityFilter.value = next
+    await refresh()
+  }
+
+  async function setProjectFilter(next: string) {
+    projectFilter.value = next
     await refresh()
   }
 
@@ -198,7 +222,7 @@ export const useTodoStore = defineStore('todo', () => {
       await refreshAllCounts()
       return task
     }
-    const sticky = 'status' in payload || 'dueAt' in payload || retainedId.value === id
+    const sticky = 'status' in payload || 'dueAt' in payload || 'projectId' in payload || retainedId.value === id
     const index = tasks.value.findIndex(task => task.id === id)
     await refresh(sticky ? { keep: task, keepIndex: index } : undefined)
     if (keep && tasks.value.some(item => item.id === keep))
@@ -245,6 +269,7 @@ export const useTodoStore = defineStore('todo', () => {
     perspective,
     keyword,
     priorityFilter,
+    projectFilter,
     viewMode,
     selectedId,
     retainedId,
@@ -253,11 +278,13 @@ export const useTodoStore = defineStore('todo', () => {
     error,
     counts,
     countsByPriority,
+    countsByProject,
     refresh,
     refreshProjects,
     refreshAllCounts,
     setPerspective,
     setPriorityFilter,
+    setProjectFilter,
     setViewMode,
     setKeyword,
     select,
