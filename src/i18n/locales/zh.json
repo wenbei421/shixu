@@ -45,7 +45,45 @@
     "placeholder": "{name}模块骨架已就绪，业务内容稍后接入。"
   },
   "home": {
-    "label": "今日总览"
+    "label": "今日总览",
+    "summary": "看清今天的投入。片段、分类和应用还没记下来，这些位置先空着。",
+    "summaryLive": "{todo} 件要做，记下 {notes} 条。片段、分类和应用还没记下来。",
+    "statsLabel": "统计",
+    "emptyValue": "—",
+    "cards": {
+      "fragments": "今日片段",
+      "fragmentsHint": "时间线尚未接入",
+      "fragmentsHintLive": "已记录 {count} 条",
+      "todo": "今天要做",
+      "todoHint": "来自待办 · 今天",
+      "todoHintLive": "未完成，含已逾期",
+      "muse": "今日记下",
+      "museHint": "来自灵感库 · 今日",
+      "museHintLive": "今天新建",
+      "plan": "计划完成",
+      "planHint": "计划尚未接入",
+      "planHintLive": "今天到期 {done}/{total}",
+      "planHintNone": "今天没有到期的待办"
+    },
+    "heatmap": {
+      "title": "片段热力",
+      "range": "近 16 周 · 按天",
+      "empty": "时间线尚未记录片段",
+      "less": "少",
+      "more": "多"
+    },
+    "allocation": {
+      "title": "时间去向",
+      "source": "洞察",
+      "emptyTitle": "活动分类尚未接入",
+      "emptyBody": "窗口记录接上之后，这里按分类看一天的去向。"
+    },
+    "apps": {
+      "title": "应用",
+      "source": "尚未统计",
+      "emptyTitle": "应用统计尚未接入",
+      "emptyBody": "还没有按应用汇总的片段。"
+    }
   },
   "languages": {
     "label": "语言"

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拾序 · 今日总览原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --radius: 4px;
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.145 0 0);
+      --card: oklch(1 0 0);
+      --primary: oklch(0.205 0 0);
+      --primary-foreground: oklch(0.985 0 0);
+      --secondary: oklch(0.97 0 0);
+      --muted: oklch(0.97 0 0);
+      --muted-foreground: oklch(0.556 0 0);
+      --border: oklch(0.922 0 0);
+      --sidebar: oklch(0.985 0 0);
+      --sidebar-foreground: oklch(0.145 0 0);
+      --sidebar-accent: oklch(0.97 0 0);
+      --sidebar-border: oklch(0.922 0 0);
+      --emerald: oklch(0.696 0.17 162.48);
+      color-scheme: light;
+    }
+
+    html.dark {
+      --background: oklch(0.145 0 0);
+      --foreground: oklch(0.985 0 0);
+      --card: oklch(0.205 0 0);
+      --primary: oklch(0.922 0 0);
+      --primary-foreground: oklch(0.205 0 0);
+      --secondary: oklch(0.269 0 0);
+      --muted: oklch(0.269 0 0);
+      --muted-foreground: oklch(0.708 0 0);
+      --border: oklch(1 0 0 / 10%);
+      --sidebar: oklch(0.205 0 0);
+      --sidebar-foreground: oklch(0.985 0 0);
+      --sidebar-accent: oklch(0.269 0 0);
+      --sidebar-border: oklch(1 0 0 / 10%);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 14px;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    svg { display: block; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 236px 1fr;
+      grid-template-rows: 40px 1fr 28px;
+      height: 100%;
+    }
+    .sidebar {
+      grid-row: 1 / -1;
+      background: var(--sidebar);
+      color: var(--sidebar-foreground);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      min-height: 0;
+    }
+    .side-label { padding: 8px 8px 4px; font-size: 12px; color: var(--muted-foreground); }
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: var(--radius);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .nav button:hover, .nav button.active { background: var(--sidebar-accent); }
+    .nav button.active { font-weight: 600; }
+    .nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav .badge {
+      margin-left: auto;
+      font-size: 11px;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-radius: 999px;
+      min-width: 18px;
+      text-align: center;
+      padding: 0 5px;
+    }
+    .side-foot { margin-top: auto; }
+    .user { display: flex; align-items: center; gap: 8px; padding: 8px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 6px; background: var(--muted);
+      display: grid; place-items: center; font-size: 13px; font-weight: 600;
+    }
+    .user small { display: block; color: var(--muted-foreground); font-size: 12px; }
+
+    .topbar, .statusbar {
+      display: flex; align-items: center; gap: 8px; padding: 0 12px;
+      border-color: var(--border);
+    }
+    .topbar { border-bottom: 1px solid var(--border); }
+    .brand { font-weight: 600; }
+    .search {
+      margin-left: auto; display: flex; align-items: center; gap: 8px;
+      width: min(420px, 46vw); height: 32px; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0 8px; color: var(--muted-foreground);
+    }
+    .search input { flex: 1; border: 0; outline: none; background: transparent; min-width: 0; }
+    .kbd { border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-size: 11px; }
+    .icon-btn {
+      width: 28px; height: 28px; border: 0; background: transparent;
+      border-radius: var(--radius); display: grid; place-items: center;
+    }
+    .icon-btn svg, .search svg, .statusbar svg, .card-ico svg {
+      width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .vdiv { width: 1px; height: 16px; background: var(--border); }
+
+    .main { min-width: 0; min-height: 0; overflow: auto; padding: 24px 28px 36px; }
+    .proto {
+      display: flex; gap: 12px; align-items: center;
+      margin-bottom: 18px; color: var(--muted-foreground); font-size: 12px;
+    }
+    .seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .seg button { border: 0; background: transparent; padding: 5px 10px; color: var(--muted-foreground); }
+    .seg button + button { border-left: 1px solid var(--border); }
+    .seg button.on { background: var(--secondary); color: var(--foreground); font-weight: 600; }
+
+    .page-head { margin-bottom: 18px; }
+    .date { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+    .summary { margin: 6px 0 0; color: var(--muted-foreground); font-size: 13px; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      padding: 14px 14px 12px;
+    }
+    .card-top { display: flex; align-items: center; gap: 8px; color: var(--muted-foreground); font-size: 12px; }
+    .card-ico {
+      width: 22px; height: 22px; border-radius: 6px; background: var(--muted);
+      display: grid; place-items: center;
+    }
+    .metric { margin: 10px 0 2px; font-size: 26px; font-weight: 650; letter-spacing: -0.03em; color: var(--muted-foreground); }
+    .hint { margin: 0; font-size: 12px; color: var(--muted-foreground); }
+    .bars { display: flex; align-items: flex-end; gap: 4px; height: 28px; margin-top: 14px; }
+    .bars i {
+      flex: 1; height: 6px; border-radius: 2px; background: var(--muted);
+      display: block;
+    }
+
+    .panel { margin-top: 12px; }
+    .panel h2 { margin: 0; font-size: 13px; font-weight: 600; }
+    .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .panel-head span, .foot { color: var(--muted-foreground); font-size: 12px; }
+
+    .heat { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: center; }
+    .days { display: grid; grid-template-rows: repeat(7, 12px); gap: 3px; font-size: 10px; color: var(--muted-foreground); }
+    .days span { line-height: 12px; }
+    .cells { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px); grid-auto-columns: 12px; gap: 3px; }
+    .cells i { display: block; border-radius: 2px; background: var(--muted); }
+    .legend { display: flex; align-items: center; gap: 4px; }
+    .legend i { width: 12px; height: 12px; border-radius: 2px; background: var(--muted); display: block; }
+    .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .empty-block {
+      min-height: 180px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted-foreground);
+      padding: 24px;
+      background: color-mix(in oklch, var(--muted) 45%, transparent);
+    }
+    .empty-block strong { display: block; font-weight: 600; color: var(--foreground); margin-bottom: 4px; }
+    .ring {
+      width: 92px; height: 92px; border-radius: 50%;
+      border: 10px solid var(--muted); margin: 0 auto 12px;
+    }
+
+    .statusbar {
+      border-top: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-size: 11px;
+      justify-content: space-between;
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: 8px; }
+    .dot-live { width: 6px; height: 6px; border-radius: 99px; background: var(--emerald); }
+    .mono { font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+    @media (max-width: 1100px) {
+      .kpis, .split { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .kpis, .split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="side-label">工作区</div>
+      <nav class="nav" id="sideNav">
+        <button class="active" data-route="/home" type="button"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>今日总览</button>
+        <button data-route="/todo" type="button"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>待办</button>
+        <button data-route="/muse" type="button"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>灵感库</button>
+        <button data-route="/timeline" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>时间线</button>
+        <button data-route="/insight" type="button"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 14 4-4 3 3 5-6"/></svg>洞察</button>
+        <button data-route="/report" type="button"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>日报</button>
+        <button data-route="/plan" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>计划<span class="badge">2</span></button>
+      </nav>
+      <div class="side-foot">
+        <nav class="nav">
+          <button data-route="/settings" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2"/></svg>设置</button>
+        </nav>
+        <div class="user">
+          <div class="avatar">序</div>
+          <div>拾序<small>local@shixu.os</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <header class="topbar">
+      <button class="icon-btn" type="button" aria-label="侧栏" disabled>
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+      </button>
+      <span class="vdiv"></span>
+      <span class="brand">拾序</span>
+      <label class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        <input type="search" placeholder="综合查询：片段 · 任务 · 项目 · 应用…" disabled>
+        <span class="kbd">Ctrl+K</span>
+      </label>
+    </header>
+
+    <main class="main">
+      <div class="proto">
+        <span>原型</span>
+        <div class="seg" id="themeSeg">
+          <button type="button" class="on" data-theme="light">浅色</button>
+          <button type="button" data-theme="dark">深色</button>
+        </div>
+      </div>
+
+      <div class="page-head">
+        <h1 class="date">9月21日 星期一</h1>
+        <p class="summary">看清今天的投入。片段、分类和应用还没记下来，这些位置先空着。</p>
+      </div>
+
+      <section class="kpis" aria-label="统计">
+        <article class="card">
+          <div class="card-top"><span class="card-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg></span>今日片段</div>
+          <p class="metric">—</p>
+          <p class="hint">时间线尚未接入</p>
+          <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="card">
+          <div class="card-top"><span class="card-ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>今天要做</div>
+          <p class="metric">—</p>
+          <p class="hint">来自待办 · 今天</p>
+          <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="card">
+          <div class="card-top"><span class="card-ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></span>今日记下</div>
+          <p class="metric">—</p>
+          <p class="hint">来自灵感库 · 今日</p>
+          <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="card">
+          <div class="card-top"><span class="card-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>计划完成</div>
+          <p class="metric">—</p>
+          <p class="hint">计划尚未接入</p>
+          <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+      </section>
+
+      <section class="card panel" aria-labelledby="heatTitle">
+        <div class="panel-head">
+          <h2 id="heatTitle">片段热力</h2>
+          <span>近 16 周 · 按天</span>
+        </div>
+        <div class="heat">
+          <div class="days" aria-hidden="true"><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span>日</span></div>
+          <div class="cells" id="cells"></div>
+        </div>
+        <div class="foot">
+          <span>时间线尚未记录片段</span>
+          <div class="legend" aria-hidden="true"><span>少</span><i></i><i></i><i></i><i></i><span>多</span></div>
+        </div>
+      </section>
+
+      <section class="split">
+        <article class="card panel">
+          <div class="panel-head"><h2>时间去向</h2><span>洞察</span></div>
+          <div class="empty-block">
+            <div>
+              <div class="ring" aria-hidden="true"></div>
+              <strong>活动分类尚未接入</strong>
+              窗口记录接上之后，这里按分类看一天的去向。
+            </div>
+          </div>
+        </article>
+        <article class="card panel">
+          <div class="panel-head"><h2>应用</h2><span>尚未统计</span></div>
+          <div class="empty-block">
+            <div>
+              <strong>应用统计尚未接入</strong>
+              还没有按应用汇总的片段。
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <div class="status-left">
+        <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span id="routeLabel">今日总览</span>
+        <span class="vdiv"></span>
+        <span>0 片段</span>
+      </div>
+      <div class="status-right">
+        <span>v0.0.2</span>
+        <span class="vdiv"></span>
+        <span class="dot-live"></span>
+        <span>SQLite 就绪</span>
+        <span class="vdiv"></span>
+        <span class="mono" id="clock">--:--:--</span>
+      </div>
+    </footer>
+  </div>
+  <script>
+    const cells = document.getElementById('cells')
+    for (let i = 0; i < 16 * 7; i += 1) {
+      cells.appendChild(document.createElement('i'))
+    }
+
+    const names = { '/home': '今日总览', '/todo': '待办', '/muse': '灵感库', '/timeline': '时间线', '/insight': '洞察', '/report': '日报', '/plan': '计划', '/settings': '设置' }
+    document.getElementById('sideNav').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+      if (!button) return
+      for (const item of document.querySelectorAll('#sideNav button')) item.classList.toggle('active', item === button)
+      const path = button.dataset.route
+      document.getElementById('routeLabel').textContent = `${names[path]} · ${path}`
+    })
+
+    document.getElementById('themeSeg').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+      if (!button) return
+      document.documentElement.classList.toggle('dark', button.dataset.theme === 'dark')
+      for (const item of event.currentTarget.querySelectorAll('button')) item.classList.toggle('on', item === button)
+    })
+
+    function tick() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+    }
+    tick()
+    setInterval(tick, 1000)
+  </script>
+</body>
+</html>

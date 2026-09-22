@@ -45,7 +45,45 @@
     "placeholder": "El esqueleto de {name} está listo. El contenido se conectará después."
   },
   "home": {
-    "label": "Resumen"
+    "label": "Resumen",
+    "summary": "Mira en qué se fue el día. Aún no hay fragmentos, categorías ni apps, así que estos espacios quedan vacíos.",
+    "summaryLive": "{todo} para hoy, {notes} anotadas. Aún no hay fragmentos, categorías ni apps.",
+    "statsLabel": "Estadísticas",
+    "emptyValue": "—",
+    "cards": {
+      "fragments": "Fragmentos de hoy",
+      "fragmentsHint": "La línea de tiempo aún no está conectada",
+      "fragmentsHintLive": "{count} registrados",
+      "todo": "Para hoy",
+      "todoHint": "Desde Tareas · Hoy",
+      "todoHintLive": "Abiertas, incluidas las vencidas",
+      "muse": "Anotado hoy",
+      "museHint": "Desde Muse · Hoy",
+      "museHintLive": "Creadas hoy",
+      "plan": "Cumplimiento del plan",
+      "planHint": "El plan aún no está conectado",
+      "planHintLive": "Vencen hoy {done}/{total}",
+      "planHintNone": "Hoy no vence ninguna tarea"
+    },
+    "heatmap": {
+      "title": "Mapa de fragmentos",
+      "range": "Últimas 16 semanas · por día",
+      "empty": "La línea de tiempo aún no registra fragmentos",
+      "less": "Menos",
+      "more": "Más"
+    },
+    "allocation": {
+      "title": "A dónde fue el tiempo",
+      "source": "Perspectivas",
+      "emptyTitle": "Las categorías de actividad aún no están conectadas",
+      "emptyBody": "Cuando haya registro de ventanas, aquí se ve el día por categoría."
+    },
+    "apps": {
+      "title": "Apps",
+      "source": "Sin contar",
+      "emptyTitle": "Las estadísticas de apps aún no están conectadas",
+      "emptyBody": "Todavía no hay fragmentos agrupados por app."
+    }
   },
   "languages": {
     "label": "Idiomas"
