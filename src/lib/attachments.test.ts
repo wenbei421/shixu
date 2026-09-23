@@ -2,16 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { attachmentExt, canPreviewAttachment, formatAttachmentSize, shouldAttachClipboardData } from './attachments'
 
 describe('attachments helpers', () => {
+  it('normalizes extension without type whitelist', () => {
+    expect(attachmentExt('a.Markdown')).toBe('markdown')
+    expect(attachmentExt('budget.XLSX')).toBe('xlsx')
+    expect(attachmentExt('legacy.xls')).toBe('xls')
+    expect(attachmentExt('virus.exe')).toBe('exe')
+    expect(attachmentExt('noext')).toBe(null)
+  })
+
   it('detects previewable types', () => {
     expect(canPreviewAttachment('photo.PNG')).toBe(true)
     expect(canPreviewAttachment('a.docx')).toBe(false)
+    expect(canPreviewAttachment('sheet.xlsx')).toBe(false)
+    expect(canPreviewAttachment('virus.exe')).toBe(false)
     expect(canPreviewAttachment('x.pdf')).toBe(true)
-  })
-
-  it('normalizes extension', () => {
-    expect(attachmentExt('a.Markdown')).toBe('markdown')
-    expect(attachmentExt('noext')).toBe(null)
-    expect(attachmentExt('virus.exe')).toBe(null)
   })
 
   it('formats size', () => {

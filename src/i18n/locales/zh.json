@@ -410,6 +410,11 @@
       "group": "优先级",
       "all": "全部"
     },
+    "projectFilter": {
+      "group": "项目",
+      "all": "全部",
+      "empty": "暂无项目"
+    },
     "view": {
       "card": "列表",
       "board": "看板",

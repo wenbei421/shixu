@@ -6,8 +6,6 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   addAttachment,
-  ATTACHMENT_EXTENSIONS,
-  attachmentExt,
   discardClipboardFile,
   MAX_ATTACHMENT_BYTES,
   readClipboardAttachments,
@@ -36,12 +34,6 @@ function filenameOf(path: string) {
 }
 
 async function acceptFile(file: PendingAttachment) {
-  if (!attachmentExt(file.filename)) {
-    emit('error', t('attachments.unsupported'))
-    if (file.ephemeral)
-      await discardClipboardFile(file.path).catch(() => undefined)
-    return false
-  }
   if (props.mode === 'pending') {
     emit('pending', file)
     return true
@@ -67,8 +59,6 @@ async function acceptFile(file: PendingAttachment) {
       emit('error', t('attachments.limitSize'))
     else if (message.includes('limit is 5'))
       emit('error', t('attachments.limitCount'))
-    else if (message.includes('unsupported'))
-      emit('error', t('attachments.unsupported'))
     else
       emit('error', t('attachments.addFailed'))
     return false
@@ -100,7 +90,6 @@ async function acceptFiles(files: PendingAttachment[]) {
 async function pick() {
   const selected = await open({
     multiple: true,
-    filters: [{ name: 'Attachments', extensions: ATTACHMENT_EXTENSIONS }],
   })
   if (!selected)
     return

@@ -100,6 +100,61 @@ pub struct ListTodoQuery {
     pub perspective: Option<String>,
     pub keyword: Option<String>,
     pub priority: Option<String>,
+    /// `all` / 缺省：不过滤；`none`：无项目；其余为项目雪花 ID 字符串
+    pub project_id: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+enum ProjectFilter {
+    All,
+    None,
+    Id(i64),
+}
+
+fn parse_project_filter(raw: Option<&str>) -> Result<ProjectFilter, AppError> {
+    match raw.map(str::trim).filter(|s| !s.is_empty()) {
+        None | Some("all") => Ok(ProjectFilter::All),
+        Some("none") => Ok(ProjectFilter::None),
+        Some(s) => Ok(ProjectFilter::Id(id::parse_id(s)?)),
+    }
+}
+
+fn push_project_filter(qb: &mut QueryBuilder<Sqlite>, filter: &ProjectFilter) {
+    match filter {
+        ProjectFilter::All => {}
+        ProjectFilter::None => {
+            qb.push(" AND t.project_id IS NULL");
+        }
+        ProjectFilter::Id(pid) => {
+            qb.push(" AND t.project_id = ");
+            qb.push_bind(*pid);
+        }
+    }
+}
+
+/// 已校验的过滤片段，可安全拼进 COUNT SQL（project id 为整数）
+fn project_filter_sql(filter: &ProjectFilter) -> String {
+    match filter {
+        ProjectFilter::All => String::new(),
+        ProjectFilter::None => " AND t.project_id IS NULL".into(),
+        ProjectFilter::Id(pid) => format!(" AND t.project_id = {pid}"),
+    }
+}
+
+fn perspective_filter_sql(perspective: &str) -> &'static str {
+    match perspective {
+        "inbox" => " AND t.project_id IS NULL AND t.due_at IS NULL AND t.status != 'done'",
+        "today" => {
+            " AND t.status != 'done' AND t.due_at IS NOT NULL \
+             AND t.due_at < (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)"
+        }
+        "upcoming" => {
+            " AND t.status != 'done' AND t.due_at IS NOT NULL \
+             AND t.due_at >= (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)"
+        }
+        "done" => " AND t.status = 'done'",
+        _ => " AND t.status != 'done'",
+    }
 }
 
 fn validate_status(status: &str) -> Result<(), AppError> {
@@ -180,32 +235,11 @@ pub async fn list_todo_tasks(
     query: ListTodoQuery,
 ) -> Result<Vec<TaskDto>, AppError> {
     let perspective = query.perspective.as_deref().unwrap_or("all");
+    let project = parse_project_filter(query.project_id.as_deref())?;
     let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(TASK_SELECT);
     qb.push(" WHERE t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL");
-
-    match perspective {
-        "inbox" => {
-            qb.push(" AND t.project_id IS NULL AND t.due_at IS NULL AND t.status != 'done'");
-        }
-        "today" => {
-            qb.push(
-                " AND t.status != 'done' AND t.due_at IS NOT NULL \
-                 AND t.due_at < (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)",
-            );
-        }
-        "upcoming" => {
-            qb.push(
-                " AND t.status != 'done' AND t.due_at IS NOT NULL \
-                 AND t.due_at >= (CAST(strftime('%s','now','start of day','+1 day') AS INTEGER) * 1000)",
-            );
-        }
-        "done" => {
-            qb.push(" AND t.status = 'done'");
-        }
-        _ => {
-            qb.push(" AND t.status != 'done'");
-        }
-    }
+    qb.push(perspective_filter_sql(perspective));
+    push_project_filter(&mut qb, &project);
 
     if let Some(ref priority) = query.priority {
         let priority = priority.trim();
@@ -535,28 +569,31 @@ pub struct TodoCountsDto {
 #[serde(rename_all = "camelCase")]
 pub struct TodoCountsQuery {
     pub priority: Option<String>,
+    /// 与 `ListTodoQuery.project_id` 同语义
+    pub project_id: Option<String>,
 }
 
-/// 在「指定 priority 过滤下」统计每个 perspective 的任务数。
+/// 在「指定 priority / project 过滤下」统计每个 perspective 的任务数。
 /// 与 `list_todo_tasks` 的 WHERE 语义完全对齐（不含 keyword，关键词只是搜索过滤不影响计数）。
 #[tauri::command]
 pub async fn get_todo_counts(
     db: tauri::State<'_, Db>,
     query: TodoCountsQuery,
 ) -> Result<TodoCountsDto, AppError> {
-    // 把 priority 过滤拼成 SQL 片段（与 list_todo_tasks 完全一致）
     let mut priority_sql = String::new();
     if let Some(ref p) = query.priority {
         let p = p.trim();
         if !p.is_empty() && p != "all" {
             validate_priority(p)?;
-            // p 已经被 validate_priority 校验过，不会出现 SQL 注入
             priority_sql.push_str(&format!(" AND t.priority = '{p}'"));
         }
     }
+    let project = parse_project_filter(query.project_id.as_deref())?;
+    let project_sql = project_filter_sql(&project);
 
-    let base =
-        format!("t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL{priority_sql}");
+    let base = format!(
+        "t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL{priority_sql}{project_sql}"
+    );
 
     let sql = format!(
         r#"
@@ -578,4 +615,57 @@ pub async fn get_todo_counts(
 
     let row: TodoCountsDto = sqlx::query_as(&sql).fetch_one(&db.pool).await?;
     Ok(row)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoProjectCountsQuery {
+    pub perspective: Option<String>,
+    pub priority: Option<String>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoProjectCountDto {
+    pub project_id: Option<String>,
+    pub count: i64,
+}
+
+#[derive(Debug, FromRow)]
+struct TodoProjectCountRow {
+    project_id: Option<i64>,
+    count: i64,
+}
+
+/// 在当前 perspective + priority 下，按项目分组计数（不含项目过滤本身）。
+#[tauri::command]
+pub async fn get_todo_project_counts(
+    db: tauri::State<'_, Db>,
+    query: TodoProjectCountsQuery,
+) -> Result<Vec<TodoProjectCountDto>, AppError> {
+    let perspective = query.perspective.as_deref().unwrap_or("all");
+    let mut priority_sql = String::new();
+    if let Some(ref p) = query.priority {
+        let p = p.trim();
+        if !p.is_empty() && p != "all" {
+            validate_priority(p)?;
+            priority_sql.push_str(&format!(" AND t.priority = '{p}'"));
+        }
+    }
+    let perspective_sql = perspective_filter_sql(perspective);
+    let sql = format!(
+        "SELECT t.project_id AS project_id, COUNT(*) AS count \
+         FROM todo_tasks t \
+         WHERE t.deleted_at IS NULL AND t.archived = 0 AND t.parent_id IS NULL\
+         {perspective_sql}{priority_sql} \
+         GROUP BY t.project_id"
+    );
+    let rows: Vec<TodoProjectCountRow> = sqlx::query_as(&sql).fetch_all(&db.pool).await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| TodoProjectCountDto {
+            project_id: row.project_id.map(|id| id.to_string()),
+            count: row.count,
+        })
+        .collect())
 }

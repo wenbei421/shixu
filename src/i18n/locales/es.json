@@ -407,7 +407,13 @@
     },
     "subtaskPlaceholder": "Add a subtask and press Enter",
     "priorityFilter": {
-      "all": "All priorities"
+      "group": "Prioridad",
+      "all": "Todas"
+    },
+    "projectFilter": {
+      "group": "Proyectos",
+      "all": "Todos",
+      "empty": "Aún no hay proyectos"
     },
     "view": {
       "card": "List",

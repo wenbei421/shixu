@@ -88,6 +88,7 @@ pub fn run() {
             commands::delete_todo_task,
             commands::export_todo_json,
             commands::get_todo_counts,
+            commands::get_todo_project_counts,
             commands::list_attachments,
             commands::add_attachment,
             commands::remove_attachment,
