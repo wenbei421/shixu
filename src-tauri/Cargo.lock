@@ -4318,7 +4318,7 @@ dependencies = [
 
 [[package]]
 name = "shixu"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "clipboard-win",
  "fix-path-env",

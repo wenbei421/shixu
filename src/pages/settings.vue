@@ -34,7 +34,7 @@ import { useSettingsStore } from '@/stores/settings'
 type SettingsSection = 'general' | 'backup' | 'tags' | 'projects' | 'about'
 
 /** Keep in sync with package.json version */
-const APP_VERSION = '0.0.2'
+const APP_VERSION = '0.0.3'
 
 interface NavItem {
   id: SettingsSection
