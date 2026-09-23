@@ -53,27 +53,20 @@ export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 export const MAX_ATTACHMENTS_PER_OWNER = 5
 
 const PREVIEW_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'md', 'markdown'])
-const ALLOWED_EXT = new Set([
-  ...PREVIEW_EXT,
-  'docx',
-  'xlsx',
-  'xls',
-  'zip',
-  '7z',
-  'rar',
-])
 
-export const ATTACHMENT_EXTENSIONS = [...ALLOWED_EXT]
-
+/** 任意扩展名（小写）；无扩展名返回 null。不限制类型。 */
 export function attachmentExt(filename: string): string | null {
   const base = filename.split(/[/\\]/).pop() ?? filename
   const i = base.lastIndexOf('.')
   if (i <= 0)
     return null
   const ext = base.slice(i + 1).toLowerCase()
-  return ALLOWED_EXT.has(ext) ? ext : null
+  if (!ext || ext.includes('/') || ext.includes('\\') || ext.includes('..'))
+    return null
+  return ext
 }
 
+/** 图片 / md / pdf 应用内预览；其余系统打开 */
 export function canPreviewAttachment(filename: string): boolean {
   const ext = attachmentExt(filename)
   return !!ext && PREVIEW_EXT.has(ext)

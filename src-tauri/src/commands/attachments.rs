@@ -16,18 +16,14 @@ use crate::{
 pub const MAX_ATTACHMENT_BYTES: u64 = 10 * 1024 * 1024;
 pub const MAX_ATTACHMENTS_PER_OWNER: i64 = 5;
 
-const ALLOWED_EXT: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "pdf", "md", "markdown", "docx", "xlsx", "xls", "zip",
-    "7z", "rar",
-];
-
+/// 提取扩展名（小写）；无扩展名或含路径字符时返回 None。不限制类型。
 pub fn normalize_ext(filename: &str) -> Option<String> {
     let name = Path::new(filename).file_name()?.to_str()?;
     let ext = Path::new(name).extension()?.to_str()?.to_ascii_lowercase();
-    if ALLOWED_EXT.contains(&ext.as_str()) {
-        Some(ext)
-    } else {
+    if ext.is_empty() || ext.contains("..") || ext.contains('/') || ext.contains('\\') {
         None
+    } else {
+        Some(ext)
     }
 }
 
@@ -49,6 +45,7 @@ pub fn mime_for_ext(ext: &str) -> &'static str {
     }
 }
 
+/// 应用内可预览；其余走系统默认打开
 pub fn is_previewable(ext: &str) -> bool {
     matches!(
         ext,
@@ -301,9 +298,12 @@ pub async fn add_attachment(
         .and_then(|n| n.to_str())
         .ok_or_else(|| AppError::Invalid("invalid filename".into()))?
         .to_string();
-    let ext = normalize_ext(&filename)
-        .ok_or_else(|| AppError::Invalid("unsupported file type".into()))?;
-    let mime = mime_for_ext(&ext).to_string();
+    let ext = normalize_ext(&filename);
+    let mime = ext
+        .as_deref()
+        .map(mime_for_ext)
+        .unwrap_or("application/octet-stream")
+        .to_string();
 
     let count: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM sys_attachments \
@@ -321,7 +321,10 @@ pub async fn add_attachment(
     let hash = hex::encode(Sha256::digest(&bytes));
 
     let aid = id::next_id()?;
-    let stored_name = format!("{aid}.{ext}");
+    let stored_name = match &ext {
+        Some(e) => format!("{aid}.{e}"),
+        None => id::id_to_string(aid),
+    };
     validate_stored_name(&stored_name)?;
 
     let app_data = app
@@ -430,8 +433,7 @@ pub async fn read_attachment_text(
     let aid = id::parse_id(&id)?;
     let app_data = app_data_from_db(&db)?;
     let row = fetch_attachment_row(&db.pool, aid).await?;
-    let ext = normalize_ext(&row.filename)
-        .ok_or_else(|| AppError::Invalid("unsupported file type".into()))?;
+    let ext = normalize_ext(&row.filename).unwrap_or_default();
     if ext != "md" && ext != "markdown" {
         return Err(AppError::Invalid("not a markdown attachment".into()));
     }
@@ -458,9 +460,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rejects_unknown_ext() {
-        assert!(normalize_ext("a.exe").is_none());
+    fn accepts_any_ext() {
+        assert_eq!(normalize_ext("a.exe").as_deref(), Some("exe"));
         assert_eq!(normalize_ext("a.PNG").as_deref(), Some("png"));
+        assert!(normalize_ext("noext").is_none());
     }
 
     #[test]
@@ -474,11 +477,11 @@ mod tests {
         assert!(is_previewable("pdf"));
         assert!(!is_previewable("docx"));
         assert!(!is_previewable("xlsx"));
+        assert!(!is_previewable("exe"));
         assert_eq!(normalize_ext("budget.XLSX").as_deref(), Some("xlsx"));
-        assert_eq!(normalize_ext("old.xls").as_deref(), Some("xls"));
         assert_eq!(
-            mime_for_ext("xlsx"),
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime_for_ext("unknown"),
+            "application/octet-stream"
         );
     }
 }
