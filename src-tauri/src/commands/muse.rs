@@ -868,7 +868,7 @@ fn validate_project_status(status: &str) -> Result<(), AppError> {
 }
 
 fn backup_dir(app_data: &Path) -> PathBuf {
-    sqlite::muse_backup_dir(app_data)
+    sqlite::backup_dir(app_data)
 }
 
 fn file_mtime_ms(path: &Path) -> i64 {

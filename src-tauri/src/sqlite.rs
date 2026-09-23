@@ -27,12 +27,12 @@ pub fn pending_restore_file_name() -> &'static str {
     }
 }
 
-/// Muse 备份目录名：开发 / 生产隔离
-pub fn muse_backup_dir_name() -> &'static str {
+/// 备份目录名：开发 / 生产隔离（整库备份，含灵感、待办、附件侧车）
+pub fn backup_dir_name() -> &'static str {
     if is_dev() {
-        "muse-backups-dev"
+        "shixu-backups-dev"
     } else {
-        "muse-backups"
+        "shixu-backups"
     }
 }
 
@@ -46,9 +46,9 @@ pub fn pending_restore_path(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join(pending_restore_file_name())
 }
 
-/// `app_data_dir` 下的 Muse 备份目录
-pub fn muse_backup_dir(app_data_dir: &Path) -> PathBuf {
-    app_data_dir.join(muse_backup_dir_name())
+/// `app_data_dir` 下的备份目录
+pub fn backup_dir(app_data_dir: &Path) -> PathBuf {
+    app_data_dir.join(backup_dir_name())
 }
 
 /// 附件目录名（开发 / 生产共用同一相对名，随 app_data 隔离）
@@ -99,7 +99,7 @@ async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
     Ok(pool)
 }
 
-/// 删除当前环境的待恢复副本、Muse 备份与附件目录。主库文件保留。
+/// 删除当前环境的待恢复副本、备份与附件目录。主库文件保留。
 pub fn remove_runtime_data(app_data_dir: &Path) -> Result<(), AppError> {
     let pending = pending_restore_path(app_data_dir);
     if pending.exists() {
@@ -111,7 +111,7 @@ pub fn remove_runtime_data(app_data_dir: &Path) -> Result<(), AppError> {
         std::fs::remove_dir_all(&pending_att)?;
     }
 
-    let backups = muse_backup_dir(app_data_dir);
+    let backups = backup_dir(app_data_dir);
     if backups.exists() {
         std::fs::remove_dir_all(&backups)?;
     }
@@ -174,7 +174,7 @@ fn apply_pending_restore(app_data_dir: &Path) -> Result<(), AppError> {
         }
 
         std::fs::rename(&pending, &target)?;
-        log::info!("Applied pending Muse/DB restore → {}", target.display());
+        log::info!("Applied pending DB restore → {}", target.display());
     }
 
     let pending_att = pending_attachments_path(app_data_dir);
@@ -223,7 +223,7 @@ mod tests {
         let root = Path::new("/tmp/shixu-app-data");
         let db = db_path(root);
         let pending = pending_restore_path(root);
-        let backups = muse_backup_dir(root);
+        let backups = backup_dir(root);
 
         if is_dev() {
             assert_eq!(
@@ -236,7 +236,7 @@ mod tests {
             );
             assert_eq!(
                 backups.file_name().and_then(|n| n.to_str()),
-                Some("muse-backups-dev")
+                Some("shixu-backups-dev")
             );
         } else {
             assert_eq!(db.file_name().and_then(|n| n.to_str()), Some("shixu.db"));
@@ -246,12 +246,12 @@ mod tests {
             );
             assert_eq!(
                 backups.file_name().and_then(|n| n.to_str()),
-                Some("muse-backups")
+                Some("shixu-backups")
             );
         }
 
         assert_eq!(db, root.join(db_file_name()));
         assert_eq!(pending, root.join(pending_restore_file_name()));
-        assert_eq!(backups, root.join(muse_backup_dir_name()));
+        assert_eq!(backups, root.join(backup_dir_name()));
     }
 }
